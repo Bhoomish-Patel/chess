@@ -93,3 +93,11 @@ int get_piece_type(int piece){
     if(piece/6 == 1) return black;
     else return white;
 }
+int get_piece_at_pos(vector<unsigned long long int>bitboard,int pos){
+    for(int i=0;i<12;i++){
+        if((bitboard[i]>>pos)&1LL){
+            return i;
+        }
+    }
+    return -1;
+}

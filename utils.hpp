@@ -9,4 +9,5 @@ int str_to_pos(string str);
 void set_bitboard(string board_string,vector<unsigned long long int> &bitboard);
 void print_bitboard(vector<unsigned long long int> &bitboard);
 int get_piece_type(int piece);
+int get_piece_at_pos(vector<unsigned long long int>bitboard,int pos);
 #endif

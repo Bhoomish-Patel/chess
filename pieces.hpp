@@ -1,6 +1,6 @@
 #ifndef PIECES_HPP
 #define PIECES_HPP
-enum pieceType {
+enum piece_type {
     PAWN,
     BISHOP,
     KNIGHT,
@@ -9,19 +9,19 @@ enum pieceType {
     KING,
     NO_PIECE
 };
-enum allPieces {
-    W_PAWN,
+enum all_pieces{
+    W_KING,
+    W_QUEEN,
+    W_ROOK,
     W_BISHOP,
     W_KNIGHT,
-    W_ROOK,
-    W_QUEEN,
-    W_KING,
-    B_PAWN,
+    W_PAWN,
+    B_KING,
+    B_QUEEN,
+    B_ROOK,
     B_BISHOP,
     B_KNIGHT,
-    B_ROOK,
-    B_QUEEN,
-    B_KING,
-    UNOCCUPIED
+    B_PAWN,
+    UNOCCUPIED,
 };
 #endif

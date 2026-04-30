@@ -55,16 +55,74 @@ int Board:: is_occupied(int pos){
     return -1;
 }
 long long int Board::generate_attack_squares(){
-    for(int i=0;i<12;i++){
-        if(get_piece_type(i) != active_color){
-            //pawn
-            //king
-            //queen
-            //rook
-            //knight
-            //bishop
+    vector<unsigned long long int>temp = bitboard;
+    if(active_color == 0){
+        for (int i=0;i<64;i++){
+            if((bitboard[W_KING]>>i) & 1){
+                (bitboard[W_KING]) &=  ~(1ULL << i);
+            }
         }
     }
+    else{
+        for (int i=0;i<64;i++){
+            if((bitboard[B_KING]>>i) & 1){
+                (bitboard[B_KING]) &=  ~(1ULL << i);
+            }
+        }
+    }
+    active_color^=1;
+    vector<Move>attack_moves =  generate_pseudo_legal_moves();
+    active_color^=1;
+    bitboard = temp;
+    long long int attack_squares = 0;
+    for(auto i:attack_moves){
+        int row = i.from/8;
+        int col = i.from%8;
+        int opponent_pawn = (active_color == 0) ? B_PAWN : W_PAWN;
+        if (get_piece_at_pos(bitboard, i.from) == opponent_pawn){
+            if(active_color == 0){
+                if(col == 7){
+                    if(i.from - 9 >= 0)
+                        attack_squares |= (1ULL << (i.from - 9));
+                }
+                else if(col == 0){
+                    if(i.from - 7 >= 0)
+                        attack_squares |= (1ULL << (i.from - 7));
+                }
+                else{
+                    if(i.from - 9 >= 0)
+                        attack_squares |= (1ULL << (i.from - 9));
+                    if(i.from - 7 >= 0)
+                        attack_squares |= (1ULL << (i.from - 7));
+                }
+            }
+            else{
+                if(col == 7){
+                    if(i.from + 7 < 64)
+                        attack_squares |= (1ULL << (i.from + 7));
+                }
+                else if(col == 0){
+                    if(i.from + 9 < 64)
+                        attack_squares |= (1ULL << (i.from + 9));
+                }
+                else{
+                    if(i.from + 9 < 64)
+                        attack_squares |= (1ULL << (i.from + 9));
+                    if(i.from + 7 < 64)
+                        attack_squares |= (1ULL << (i.from + 7));                 
+                }
+            }
+        }
+        else{
+            attack_squares |= (1ULL << i.to);
+        }
+    }
+    for(int i=0;i<64;i++){
+        if((attack_squares>>i)&1){
+            cout<<i<<endl;
+        }
+    }
+    return attack_squares;
 }
 vector<Move> Board:: generate_legal_moves(){
     vector<Move> all_moves = generate_pseudo_legal_moves();
