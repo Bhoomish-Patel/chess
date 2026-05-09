@@ -1,0 +1,43 @@
+# Compiled executables and object files
+*.exe
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+
+# Build directories
+build/
+dist/
+bin/
+obj/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test binaries
+tests/test_runner.exe
+test_runner.exe
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Debug files
+*.dSYM/
+*.su
+*.gch
+*.pch
+
+# Backup files
+*.bak
+*.backup

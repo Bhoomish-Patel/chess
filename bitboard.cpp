@@ -54,8 +54,8 @@ int Board:: is_occupied(int pos){
     }
     return -1;
 }
-long long int Board::generate_attack_squares(int pos,int &cnt_check,int &checking_piece_square){
-    vector<unsigned long long int>temp = bitboard;
+unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int &checking_piece_square){
+    vector<unsigned  long long int>temp = bitboard;
     if(active_color == 0){
         for (int i=0;i<64;i++){
             if((bitboard[W_KING]>>i) & 1){
@@ -74,7 +74,8 @@ long long int Board::generate_attack_squares(int pos,int &cnt_check,int &checkin
     vector<Move>attack_moves =  generate_pseudo_legal_moves();
     active_color^=1;
     bitboard = temp;
-    long long int attack_squares = 0;
+    unsigned long  long int attack_squares = 0;
+
     for(auto i:attack_moves){
         int row = i.from/8;
         int col = i.from%8;
@@ -161,11 +162,6 @@ long long int Board::generate_attack_squares(int pos,int &cnt_check,int &checkin
             }
         }
     }
-    // for(int i=0;i<64;i++){
-    //     if((attack_squares>>i)&1){
-    //         cout<<i<<endl;
-    //     }
-    // }
     return attack_squares;
 }
 
@@ -181,9 +177,9 @@ vector<Move> Board:: generate_legal_moves(){
     int cur_king_pos = find_active_pos(bitboard,cur_king)[0];
     int cnt_check = 0;
     int checking_piece_square = 0;
-    long long int attack_squares = generate_attack_squares(cur_king_pos,cnt_check,checking_piece_square);
+    unsigned long long int attack_squares = generate_attack_squares(cur_king_pos,cnt_check,checking_piece_square);
     vector<Move>final_moves;
-    map<int,long long int>pinned_piece_moves = find_pinned_piece_moves(bitboard,cur_king_pos);
+    map<int,unsigned long long int>pinned_piece_moves = find_pinned_piece_moves(bitboard,cur_king_pos);
     if(cnt_check == 0){
         for(int i=0;i<all_moves.size();i++){
             Move cur = all_moves[i];
@@ -193,33 +189,83 @@ vector<Move> Board:: generate_legal_moves(){
                 }
             }
             if(pinned_piece_moves.find(cur.from) != pinned_piece_moves.end()){
-                long long int slider_moves =  pinned_piece_moves[cur.from];
-                if(!((slider_moves>>cur.to)&1)){
+                unsigned long long int slider_moves =  pinned_piece_moves[cur.from];
+                if((!((slider_moves>>cur.to)&1))){
                     continue;
                 }
             }
-            //TODO : enpassant discovered check
+            //enpassant discovered check
+            if(cur.flags == 5){
+                int r_cur_king = cur_king_pos/8;
+                int c_cur_king = cur_king_pos%8;
+                if(r_cur_king== cur.from/8){
+                    //check if opponent has a rook or a queen on this row after removal of both pawns if they check our king
+                    bool is_discovered_check = false;
+                    for(int c = c_cur_king+1;c<8;c++){
+                        if(c == cur.to%8 || c == cur.from%8){
+                            continue;
+                        }
+                        int piece_at_pos = get_piece_at_pos(bitboard,c + 8*r_cur_king);
+                        if(piece_at_pos != -1){
+                            if(get_piece_type(piece_at_pos) == active_color){
+                                break;
+                            }
+                            else if(piece_at_pos == (active_color == 0?6:0) + W_ROOK || piece_at_pos == (active_color == 0?6:0) + W_QUEEN){
+                                is_discovered_check = true;
+                                break;
+                            }
+                            else{
+                                break;
+                            }
+                        }
+                    }
+                    for(int c= c_cur_king-1;c>=0;c--){
+                        if(c == cur.to%8 || c == cur.from%8){
+                            continue;
+                        }
+                        int piece_at_pos = get_piece_at_pos(bitboard,c + 8*r_cur_king);
+                        if(piece_at_pos != -1){
+                            if(get_piece_type(piece_at_pos) == active_color){
+                                break;
+                            }
+                            else if(piece_at_pos == (active_color == 0?6:0) + W_ROOK || piece_at_pos == (active_color == 0?6:0) + W_QUEEN){
+                                is_discovered_check = true;
+                                break;
+                            }
+                            else{
+                                break;
+                            }
+                        }
+                    }
+                    if(is_discovered_check){
+                        continue;
+                    }
+                }
+            }
             final_moves.push_back(cur);
         }
 
     }
     else if(cnt_check == 1){
-        unsigned long long int slider_squares = find_slider_squares(checking_piece_square,cur_king_pos);
+        unsigned  long long int slider_squares = find_slider_squares(checking_piece_square,cur_king_pos);
         for(int i=0;i<all_moves.size();i++){
             Move cur = all_moves[i];
             if(get_piece_at_pos(bitboard,cur.from) == ((active_color == 0?0:6) + W_KING)){
+                if(cur.flags == 2 || cur.flags == 3){
+                    continue;
+                }
                 if(!((attack_squares>>cur.to)&1)){
                     final_moves.push_back(cur);
                     continue;
                 }
             }
-            if(pinned_piece_moves.find(cur.from) != pinned_piece_moves.end()){
-                long long int slider_moves =  pinned_piece_moves[cur.from];
+            else if(pinned_piece_moves.find(cur.from) != pinned_piece_moves.end()){
+                unsigned long long int slider_moves =  pinned_piece_moves[cur.from];
                 if(!((slider_moves>>cur.to)&1)){
                     continue;
                 }
             }
-            if(cur.to == checking_piece_square){
+            else if(cur.to == checking_piece_square){
                 final_moves.push_back(cur);
             }
             else if((slider_squares>>cur.to)&1){
@@ -227,7 +273,7 @@ vector<Move> Board:: generate_legal_moves(){
             }
             else{
                 int cur_piece = get_piece_at_pos(bitboard,cur.from);
-                if(cur_piece != W_PAWN || cur_piece != B_PAWN){
+                if(cur_piece != W_PAWN && cur_piece != B_PAWN){
                     continue;
                 }
                 if(get_piece_at_pos(bitboard,checking_piece_square) == (active_color == 0?B_PAWN:W_PAWN)){
@@ -245,6 +291,9 @@ vector<Move> Board:: generate_legal_moves(){
                 continue;
             }
             else{
+                if(cur.flags == 2 || cur.flags == 3){
+                    continue;
+                }
                 if((attack_squares>>cur.to)&1){
                     continue;
                 }
