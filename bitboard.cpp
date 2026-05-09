@@ -54,7 +54,7 @@ int Board:: is_occupied(int pos){
     }
     return -1;
 }
-long long int Board::generate_attack_squares(){
+long long int Board::generate_attack_squares(int pos,int &cnt_check,int &checking_piece_square){
     vector<unsigned long long int>temp = bitboard;
     if(active_color == 0){
         for (int i=0;i<64;i++){
@@ -82,52 +82,177 @@ long long int Board::generate_attack_squares(){
         if (get_piece_at_pos(bitboard, i.from) == opponent_pawn){
             if(active_color == 0){
                 if(col == 7){
-                    if(i.from - 9 >= 0)
+                    if(i.from - 9 >= 0){
                         attack_squares |= (1ULL << (i.from - 9));
+                        if(i.from - 9 == pos){
+                            checking_piece_square = i.from;
+                            cnt_check++;
+                        }
+                    }
                 }
                 else if(col == 0){
-                    if(i.from - 7 >= 0)
+                    if(i.from - 7 >= 0){
                         attack_squares |= (1ULL << (i.from - 7));
+                        if(i.from - 7 == pos){
+                            checking_piece_square = i.from;
+                            cnt_check ++;
+                        }
+                    }
                 }
                 else{
-                    if(i.from - 9 >= 0)
+                    if(i.from - 9 >= 0){
                         attack_squares |= (1ULL << (i.from - 9));
-                    if(i.from - 7 >= 0)
+                        if(i.from - 9 == pos){
+                            checking_piece_square = i.from;
+                            cnt_check++;
+                        }
+                    }
+                    if(i.from - 7 >= 0){
                         attack_squares |= (1ULL << (i.from - 7));
+                        if(i.from - 7 == pos){
+                            checking_piece_square = i.from;
+                            cnt_check++;
+                        }
+                    }
                 }
             }
             else{
                 if(col == 7){
-                    if(i.from + 7 < 64)
+                    if(i.from + 7 < 64){
                         attack_squares |= (1ULL << (i.from + 7));
+                        if(i.from + 7 == pos){
+                            checking_piece_square = i.from;
+                            cnt_check ++;
+                        }
+                    }
                 }
                 else if(col == 0){
-                    if(i.from + 9 < 64)
+                    if(i.from + 9 < 64){
                         attack_squares |= (1ULL << (i.from + 9));
+                        if(i.from + 9 == pos){
+                            checking_piece_square = i.from;
+                            cnt_check ++ ;
+                        }
+                    }
                 }
                 else{
-                    if(i.from + 9 < 64)
+                    if(i.from + 9 < 64){
                         attack_squares |= (1ULL << (i.from + 9));
-                    if(i.from + 7 < 64)
-                        attack_squares |= (1ULL << (i.from + 7));                 
+                        if(i.from + 9 == pos){
+                            checking_piece_square = i.from;
+                            cnt_check ++ ;
+                        }
+                    }
+                    if(i.from + 7 < 64){
+                        attack_squares |= (1ULL << (i.from + 7));
+                        if(i.from + 7 == pos){
+                            checking_piece_square =i.from;
+                            cnt_check ++;
+                        }
+                    }                 
                 }
             }
         }
         else{
             attack_squares |= (1ULL << i.to);
+            if(i.to  == pos){
+                checking_piece_square = i .from;
+                cnt_check++;
+            }
         }
     }
-    for(int i=0;i<64;i++){
-        if((attack_squares>>i)&1){
-            cout<<i<<endl;
-        }
-    }
+    // for(int i=0;i<64;i++){
+    //     if((attack_squares>>i)&1){
+    //         cout<<i<<endl;
+    //     }
+    // }
     return attack_squares;
 }
+
+//checks:
+//1.king move to an attacked squares
+//2.Check - i) double check - only king moves
+//          ii)single check = move  king,block the check,capture the checking piece
+//3.pinned pieces
+//4.other moves
 vector<Move> Board:: generate_legal_moves(){
     vector<Move> all_moves = generate_pseudo_legal_moves();
-    long long int attack_squares = generate_attack_squares();
-    return all_moves;
+    int cur_king = active_color== 0?0:6 + W_KING;
+    int cur_king_pos = find_active_pos(bitboard,cur_king)[0];
+    int cnt_check = 0;
+    int checking_piece_square = 0;
+    long long int attack_squares = generate_attack_squares(cur_king_pos,cnt_check,checking_piece_square);
+    vector<Move>final_moves;
+    map<int,long long int>pinned_piece_moves = find_pinned_piece_moves(bitboard,cur_king_pos);
+    if(cnt_check == 0){
+        for(int i=0;i<all_moves.size();i++){
+            Move cur = all_moves[i];
+            if(get_piece_at_pos(bitboard,cur.from) == ((active_color == 0?0:6) + W_KING)){
+                if((attack_squares>>cur.to)&1){
+                    continue;
+                }
+            }
+            if(pinned_piece_moves.find(cur.from) != pinned_piece_moves.end()){
+                long long int slider_moves =  pinned_piece_moves[cur.from];
+                if(!((slider_moves>>cur.to)&1)){
+                    continue;
+                }
+            }
+            //TODO : enpassant discovered check
+            final_moves.push_back(cur);
+        }
+
+    }
+    else if(cnt_check == 1){
+        unsigned long long int slider_squares = find_slider_squares(checking_piece_square,cur_king_pos);
+        for(int i=0;i<all_moves.size();i++){
+            Move cur = all_moves[i];
+            if(get_piece_at_pos(bitboard,cur.from) == ((active_color == 0?0:6) + W_KING)){
+                if(!((attack_squares>>cur.to)&1)){
+                    final_moves.push_back(cur);
+                    continue;
+                }
+            }
+            if(pinned_piece_moves.find(cur.from) != pinned_piece_moves.end()){
+                long long int slider_moves =  pinned_piece_moves[cur.from];
+                if(!((slider_moves>>cur.to)&1)){
+                    continue;
+                }
+            }
+            if(cur.to == checking_piece_square){
+                final_moves.push_back(cur);
+            }
+            else if((slider_squares>>cur.to)&1){
+                final_moves.push_back(cur);
+            }
+            else{
+                int cur_piece = get_piece_at_pos(bitboard,cur.from);
+                if(cur_piece != W_PAWN || cur_piece != B_PAWN){
+                    continue;
+                }
+                if(get_piece_at_pos(bitboard,checking_piece_square) == (active_color == 0?B_PAWN:W_PAWN)){
+                    if(cur.to == en_passant){
+                        final_moves.push_back(cur);
+                    }
+                }
+            }
+        }
+    }
+    else if(cnt_check >= 2){
+        for(int i=0;i<all_moves.size();i++){
+            Move cur = all_moves[i];
+            if(get_piece_at_pos(bitboard,cur.from) != ((active_color == 0?0:6) + W_KING)){
+                continue;
+            }
+            else{
+                if((attack_squares>>cur.to)&1){
+                    continue;
+                }
+            }
+            final_moves.push_back(cur);
+        }
+    }
+    return final_moves;
 }
 vector<Move> Board:: generate_pseudo_legal_moves(){
     vector<Move>moves;
@@ -168,7 +293,6 @@ vector<Move> Board:: generate_pseudo_legal_moves(){
 }
 vector<Move> Board:: generate_king_moves(int pos){
     vector<Move>moves;
-    // noraml moves 
     int row = pos/8;
     int col = pos%8;
     for(int dr=-1;dr<=1;dr++){

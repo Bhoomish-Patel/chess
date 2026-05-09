@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include "types.hpp"
+#include "pieces.hpp"
 #include<iostream>
 vector<string> split(string fen){
     vector<string> partitions;
@@ -101,3 +102,102 @@ int get_piece_at_pos(vector<unsigned long long int>bitboard,int pos){
     }
     return -1;
 }
+vector<int> find_active_pos(vector<unsigned long long int>bitboard,int piece_type){
+    vector<int>pos;
+    for(int i=0;i<64;i++){
+        if((bitboard[piece_type]>>i)&1){
+            pos.push_back(i);
+        }
+    }
+    return pos;
+}
+unsigned long long int find_slider_squares(int start_square,int end_square){
+    int s_row = start_square/8;
+    int s_col = start_square%8;
+    int e_row = end_square/8;
+    int e_col = end_square%8;
+    unsigned long long int slider_squares = 0;
+
+    if(s_row == e_row){
+        for(int i=min(s_col,e_col);i<=max(s_col,e_col);i++){
+            slider_squares = slider_squares&(1ull<<(i+s_row*8));
+        }
+        return slider_squares;
+    }
+
+    if(s_col == e_col){
+        for(int i=min(s_row,e_row);i<=max(s_row,e_row);i++){
+            slider_squares = slider_squares&(1ull<<(s_col + i*8));
+        }
+        return slider_squares;
+    }
+
+    int r_inc = -1 ,c_inc = -1;
+    if(s_col < e_col ){
+        c_inc = 1;
+    }
+    if(s_row < e_row){
+        r_inc = 1;
+    }
+    slider_squares = slider_squares&(1ull<<(start_square));
+    while(s_row != e_row && s_col != e_col){
+        slider_squares = slider_squares&(s_col + 8*s_row);
+        s_col += c_inc;
+        s_row +=r_inc;
+    }
+    return slider_squares;
+    
+}
+map<int,long long int> find_pinned_piece_moves(vector<unsigned long long int>bitboard,int king_pos){
+    vector<int> r_incs = {-1,0,1};
+    vector<int> c_incs = {-1,0,1};
+    int r_king = king_pos/8;
+    int c_king = king_pos%8;
+    int cur_king = get_piece_at_pos(bitboard,king_pos);
+    map<int,long long int>ans;
+    for(int i=0;i<3;i++){
+        for(int j=0;j<3;j++){
+            int r_inc = r_incs[i];
+            int c_inc = c_incs[j];
+            int r_cur = r_king + r_inc;
+            int c_cur = c_king + c_inc;
+            if(r_inc == 0 && c_inc ==0)continue;
+            int attack_piece_pos = -1 ,pinned_piece_pos = -1;
+            while(r_cur<8 && r_cur>=0 && c_cur>=0 && c_cur<8){
+                int cur_piece = get_piece_at_pos(bitboard,r_cur*8 + c_cur);
+                if(cur_piece!=-1){
+                    if(pinned_piece_pos == -1 && get_piece_type(cur_piece) == get_piece_type(cur_king)){
+                        pinned_piece_pos = r_cur*8 + c_cur;
+                    }
+                    else if(pinned_piece_pos!=-1 &&  get_piece_type(cur_piece) == get_piece_type(cur_king)){
+                        break;
+                    }
+                    else{
+                        attack_piece_pos = r_cur*8 + c_cur;
+                        break;
+                    }
+                }
+            }
+            if(pinned_piece_pos == -1){
+                continue;
+            }
+            int piece_type = get_piece_at_pos(bitboard,attack_piece_pos)%6;
+            if(r_inc == 0 || c_inc ==0){
+                //rook and queen 
+                if(piece_type != W_ROOK && piece_type != W_QUEEN){
+                    continue;
+                }
+            }
+            else{
+                //bishop and queen
+                if(piece_type != W_BISHOP && piece_type != W_QUEEN){
+                    continue;
+                }
+            }
+            long long int slider_moves = find_slider_squares(king_pos,attack_piece_pos);
+            ans[pinned_piece_pos] = slider_moves;
+        }
+    }
+    return ans;
+}
+

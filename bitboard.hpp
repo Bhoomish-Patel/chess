@@ -25,6 +25,6 @@ class Board{
         vector<Move> generate_knight_moves(int pos);
         vector<Move> generate_pawn_moves(int pos);
         vector<Move> generate_legal_moves();
-        long long int generate_attack_squares();
+        long long int generate_attack_squares(int pos,int&cnt_check,int &checking_piece_square);
 };
 #endif
