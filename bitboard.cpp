@@ -22,16 +22,16 @@ Board:: Board(string fen){
     string castling_rights_str = partitions[2];
     for(int i=0;i<castling_rights_str.size();i++){
         if(castling_rights_str[i] == 'k'){
-            castling_rights |= (1);
-        }
-        else if(castling_rights_str[i] == 'q'){
-            castling_rights |= (2);
-        }
-        else if(castling_rights_str[i] == 'K'){
             castling_rights |= (4);
         }
-        else if(castling_rights_str[i] == 'Q'){
+        else if(castling_rights_str[i] == 'q'){
             castling_rights |= (8);
+        }
+        else if(castling_rights_str[i] == 'K'){
+            castling_rights |= (1);
+        }
+        else if(castling_rights_str[i] == 'Q'){
+            castling_rights |= (2);
         }
     }
     //enpassant 
@@ -55,113 +55,210 @@ int Board:: is_occupied(int pos){
     return -1;
 }
 unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int &checking_piece_square){
-    vector<unsigned  long long int>temp = bitboard;
-    if(active_color == 0){
-        for (int i=0;i<64;i++){
-            if((bitboard[W_KING]>>i) & 1){
-                (bitboard[W_KING]) &=  ~(1ULL << i);
-            }
-        }
-    }
-    else{
-        for (int i=0;i<64;i++){
-            if((bitboard[B_KING]>>i) & 1){
-                (bitboard[B_KING]) &=  ~(1ULL << i);
-            }
-        }
-    }
-    active_color^=1;
-    vector<Move>attack_moves =  generate_pseudo_legal_moves();
-    active_color^=1;
-    bitboard = temp;
     unsigned long  long int attack_squares = 0;
-
-    for(auto i:attack_moves){
-        int row = i.from/8;
-        int col = i.from%8;
-        int opponent_pawn = (active_color == 0) ? B_PAWN : W_PAWN;
-        if (get_piece_at_pos(bitboard, i.from) == opponent_pawn){
-            if(active_color == 0){
+    //generate attack squares for pawns
+    vector<unsigned long long int>temp = bitboard;
+    int cur_king = active_color== white?0:6 + W_KING;
+    for(int i=0;i<64;i++){
+        if((bitboard[cur_king]>>i)&1){
+            bitboard[cur_king] = bitboard[cur_king] & (~(1ULL<<i));
+            break;
+        }
+    }
+    int opponent_pawn = (active_color == white) ? B_PAWN : W_PAWN;
+    for(int i=0;i<64;i++){
+        if((bitboard[opponent_pawn]>>i)&1){
+            int row = i/8;
+            int col = i%8;
+            if(active_color == white){
                 if(col == 7){
-                    if(i.from - 9 >= 0){
-                        attack_squares |= (1ULL << (i.from - 9));
-                        if(i.from - 9 == pos){
-                            checking_piece_square = i.from;
-                            cnt_check++;
-                        }
+                    attack_squares |= (1ULL << (i - 9));
+                    if(i - 9 == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
                     }
                 }
                 else if(col == 0){
-                    if(i.from - 7 >= 0){
-                        attack_squares |= (1ULL << (i.from - 7));
-                        if(i.from - 7 == pos){
-                            checking_piece_square = i.from;
-                            cnt_check ++;
-                        }
+                    attack_squares |= (1ULL << (i - 7));
+                    if(i - 7 == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
                     }
                 }
                 else{
-                    if(i.from - 9 >= 0){
-                        attack_squares |= (1ULL << (i.from - 9));
-                        if(i.from - 9 == pos){
-                            checking_piece_square = i.from;
-                            cnt_check++;
-                        }
+                    attack_squares |= (1ULL << (i - 9));
+                    attack_squares |= (1ULL << (i - 7));
+                    if(i - 9 == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
                     }
-                    if(i.from - 7 >= 0){
-                        attack_squares |= (1ULL << (i.from - 7));
-                        if(i.from - 7 == pos){
-                            checking_piece_square = i.from;
-                            cnt_check++;
-                        }
+                    else if(i - 7 == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
                     }
                 }
             }
             else{
                 if(col == 7){
-                    if(i.from + 7 < 64){
-                        attack_squares |= (1ULL << (i.from + 7));
-                        if(i.from + 7 == pos){
-                            checking_piece_square = i.from;
-                            cnt_check ++;
-                        }
+                    attack_squares |= (1ULL << (i + 7));
+                    if(i + 7 == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
                     }
                 }
                 else if(col == 0){
-                    if(i.from + 9 < 64){
-                        attack_squares |= (1ULL << (i.from + 9));
-                        if(i.from + 9 == pos){
-                            checking_piece_square = i.from;
-                            cnt_check ++ ;
-                        }
+                    attack_squares |= (1ULL << (i + 9));
+                    if(i + 9 == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
                     }
                 }
                 else{
-                    if(i.from + 9 < 64){
-                        attack_squares |= (1ULL << (i.from + 9));
-                        if(i.from + 9 == pos){
-                            checking_piece_square = i.from;
-                            cnt_check ++ ;
-                        }
+                    attack_squares |= (1ULL << (i + 9));
+                    attack_squares |= (1ULL << (i + 7));
+                    if(i + 9 == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
                     }
-                    if(i.from + 7 < 64){
-                        attack_squares |= (1ULL << (i.from + 7));
-                        if(i.from + 7 == pos){
-                            checking_piece_square =i.from;
-                            cnt_check ++;
-                        }
-                    }                 
+                    else if(i + 7 == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
+                    }
                 }
             }
         }
-        else{
-            attack_squares |= (1ULL << i.to);
-            if(i.to  == pos){
-                checking_piece_square = i .from;
-                cnt_check++;
+    }
+    //opponent knight
+    int opponent_knight = (active_color == white) ? B_KNIGHT : W_KNIGHT;
+     for(int i=0;i<64;i++){
+        if((bitboard[opponent_knight]>>i)&1){
+            int row = i/8;
+            int col = i%8;
+            int dr[8] = {-2,-1,1,2,2,1,-1,-2};
+            int dc[8] = {1,2,2,1,-1,-2,-2,-1};
+            for(int j=0;j<8;j++){
+                int new_row = row + dr[j];
+                int new_col = col + dc[j];
+                if(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
+                    int new_pos = new_row*8 + new_col;
+                    attack_squares |= (1ULL << new_pos);
+                    if(new_pos == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
+                    }
+                }
             }
         }
     }
+    //opponent bishop
+    int opponent_bishop = (active_color == white) ? B_BISHOP : W_BISHOP;
+    for(int i=0;i<64;i++){
+        if((bitboard[opponent_bishop]>>i)&1){
+            int row = i/8;
+            int col = i%8;
+            for(int dr=-1;dr<=1;dr++){
+                for(int dc=-1;dc<=1;dc++){
+                    if(dr==0 || dc==0) continue;
+                    int new_row = row + dr;
+                    int new_col = col + dc;
+                    while(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
+                        int new_pos = new_row*8 + new_col;
+                        attack_squares |= (1ULL << new_pos);
+                        if(new_pos == pos){
+                            checking_piece_square = i;
+                            cnt_check++;
+                        }
+                        if(is_occupied(new_pos) != -1){
+                            break;
+                        }
+                        new_row += dr;
+                        new_col += dc;
+                    }
+                }
+            }
+        }
+    }
+    //opponent rook
+    int opponent_rook = (active_color == white) ? B_ROOK : W_ROOK;
+    for(int i=0;i<64;i++){
+        if((bitboard[opponent_rook]>>i)&1){
+            int row = i/8;
+            int col = i%8;
+            for(int dr=-1;dr<=1;dr++){
+                for(int dc=-1;dc<=1;dc++){
+                    if((dr==0 && dc==0) || (dr!=0 && dc!=0)) continue;
+                    int new_row = row + dr;
+                    int new_col = col + dc;
+                    while(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
+                        int new_pos = new_row*8 + new_col;
+                        attack_squares |= (1ULL << new_pos);
+                        if(new_pos == pos){
+                            checking_piece_square = i;
+                            cnt_check++;
+                        }
+                        if(is_occupied(new_pos) != -1){
+                            break;
+                        }
+                        new_row += dr;
+                        new_col += dc;
+                    }
+                }
+            }
+        }
+    }
+    //opponent queen
+    int opponent_queen = (active_color == white) ? B_QUEEN : W_QUEEN;
+    for(int i=0;i<64;i++){
+        if((bitboard[opponent_queen]>>i)&1){
+            int row = i/8;
+            int col = i%8;
+            for(int dr=-1;dr<=1;dr++){
+                for(int dc=-1;dc<=1;dc++){
+                    if(dr==0 && dc==0) continue;
+                    int new_row = row + dr;
+                    int new_col = col + dc;
+                    while(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
+                        int new_pos = new_row*8 + new_col;
+                        attack_squares |= (1ULL << new_pos);
+                        if(new_pos == pos){
+                            checking_piece_square = i;
+                            cnt_check++;
+                        }
+                        if(is_occupied(new_pos) != -1){
+                            break;
+                        }
+                        new_row += dr;
+                        new_col += dc;
+                    }
+                }
+            }
+        }
+    }
+    //opponent king
+    int opponent_king = (active_color == white) ? B_KING : W_KING;
+    for(int i=0;i<64;i++){
+        if((bitboard[opponent_king]>>i)&1){
+            int row = i/8;
+            int col = i%8;
+            for(int dr=-1;dr<=1;dr++){
+                for(int dc=-1;dc<=1;dc++){
+                    if(dr==0 && dc==0) continue;
+                    int new_row = row + dr;
+                    int new_col = col + dc;
+                    if(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
+                        int new_pos = new_row*8 + new_col;
+                        attack_squares |= (1ULL << new_pos);
+                        if(new_pos == pos){
+                            checking_piece_square = i;
+                            cnt_check++;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+    }
+    bitboard = temp;
     return attack_squares;
 }
 
@@ -173,17 +270,18 @@ unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int
 //4.other moves
 vector<Move> Board:: generate_legal_moves(){
     vector<Move> all_moves = generate_pseudo_legal_moves();
-    int cur_king = active_color== 0?0:6 + W_KING;
+    int cur_king = active_color== white?0:6 + W_KING;
     int cur_king_pos = find_active_pos(bitboard,cur_king)[0];
     int cnt_check = 0;
     int checking_piece_square = 0;
     unsigned long long int attack_squares = generate_attack_squares(cur_king_pos,cnt_check,checking_piece_square);
     vector<Move>final_moves;
     map<int,unsigned long long int>pinned_piece_moves = find_pinned_piece_moves(bitboard,cur_king_pos);
+    checks = cnt_check;
     if(cnt_check == 0){
         for(int i=0;i<all_moves.size();i++){
             Move cur = all_moves[i];
-            if(get_piece_at_pos(bitboard,cur.from) == ((active_color == 0?0:6) + W_KING)){
+            if(get_piece_at_pos(bitboard,cur.from) == ((active_color == white?0:6) + W_KING)){
                 if((attack_squares>>cur.to)&1){
                     continue;
                 }
@@ -210,7 +308,7 @@ vector<Move> Board:: generate_legal_moves(){
                             if(get_piece_type(piece_at_pos) == active_color){
                                 break;
                             }
-                            else if(piece_at_pos == (active_color == 0?6:0) + W_ROOK || piece_at_pos == (active_color == 0?6:0) + W_QUEEN){
+                            else if(piece_at_pos == (active_color == white?6:0) + W_ROOK || piece_at_pos == (active_color == white?6:0) + W_QUEEN){
                                 is_discovered_check = true;
                                 break;
                             }
@@ -228,7 +326,7 @@ vector<Move> Board:: generate_legal_moves(){
                             if(get_piece_type(piece_at_pos) == active_color){
                                 break;
                             }
-                            else if(piece_at_pos == (active_color == 0?6:0) + W_ROOK || piece_at_pos == (active_color == 0?6:0) + W_QUEEN){
+                            else if(piece_at_pos == (active_color == white?6:0) + W_ROOK || piece_at_pos == (active_color == white?6:0) + W_QUEEN){
                                 is_discovered_check = true;
                                 break;
                             }
@@ -242,6 +340,36 @@ vector<Move> Board:: generate_legal_moves(){
                     }
                 }
             }
+            if(cur.flags == 2){
+                if(active_color == white){
+                    if((attack_squares>>f1)&1){
+                        continue;
+                    }
+                }
+                else{
+                    if((attack_squares>>f8)&1){
+                        continue;
+                    }
+                }
+            }
+            if(cur.flags == 3){
+                if(active_color == white){
+                    if((attack_squares>>d1)&1){
+                        continue;
+                    }
+                    if((attack_squares>>c1)&1){
+                        continue;
+                    }
+                }
+                else{
+                    if((attack_squares>>d8)&1){
+                        continue;
+                    }
+                    if((attack_squares>>c8)&1){
+                        continue;
+                    }
+                }
+            }
             final_moves.push_back(cur);
         }
 
@@ -250,7 +378,7 @@ vector<Move> Board:: generate_legal_moves(){
         unsigned  long long int slider_squares = find_slider_squares(checking_piece_square,cur_king_pos);
         for(int i=0;i<all_moves.size();i++){
             Move cur = all_moves[i];
-            if(get_piece_at_pos(bitboard,cur.from) == ((active_color == 0?0:6) + W_KING)){
+            if(get_piece_at_pos(bitboard,cur.from) == ((active_color == white?0:6) + W_KING)){
                 if(cur.flags == 2 || cur.flags == 3){
                     continue;
                 }
@@ -265,7 +393,7 @@ vector<Move> Board:: generate_legal_moves(){
                     continue;
                 }
             }
-            else if(cur.to == checking_piece_square){
+            else if(cur.to == checking_piece_square ){
                 final_moves.push_back(cur);
             }
             else if((slider_squares>>cur.to)&1){
@@ -276,7 +404,7 @@ vector<Move> Board:: generate_legal_moves(){
                 if(cur_piece != W_PAWN && cur_piece != B_PAWN){
                     continue;
                 }
-                if(get_piece_at_pos(bitboard,checking_piece_square) == (active_color == 0?B_PAWN:W_PAWN)){
+                if(get_piece_at_pos(bitboard,checking_piece_square) == (active_color == white       ?B_PAWN:W_PAWN)){
                     if(cur.to == en_passant){
                         final_moves.push_back(cur);
                     }
@@ -287,7 +415,7 @@ vector<Move> Board:: generate_legal_moves(){
     else if(cnt_check >= 2){
         for(int i=0;i<all_moves.size();i++){
             Move cur = all_moves[i];
-            if(get_piece_at_pos(bitboard,cur.from) != ((active_color == 0?0:6) + W_KING)){
+            if(get_piece_at_pos(bitboard,cur.from) != ((active_color == white?0:6) + W_KING)){
                 continue;
             }
             else{
@@ -362,18 +490,18 @@ vector<Move> Board:: generate_king_moves(int pos){
     }
 
     if(active_color == white){
-        if((castling_rights & 4) && is_occupied(f1) == -1 && is_occupied(g1) == -1){
+        if((castling_rights & 1) && is_occupied(f1) == -1 && is_occupied(g1) == -1){
             moves.push_back(Move(e1,g1,2)); 
         }
-        if((castling_rights & 8) && is_occupied(d1) == -1 && is_occupied(c1) == -1 && is_occupied(b1) == -1){
+        if((castling_rights & 2) && is_occupied(d1) == -1 && is_occupied(c1) == -1 && is_occupied(b1) == -1){
             moves.push_back(Move(e1,c1,3)); 
         }
     }
     else{
-        if((castling_rights & 1) && is_occupied(f8) == -1 && is_occupied(g8) == -1){
+        if((castling_rights & 4) && is_occupied(f8) == -1 && is_occupied(g8) == -1){
             moves.push_back(Move(e8,g8,2)); 
         }
-        if((castling_rights & 2) && is_occupied(d8) == -1 && is_occupied(c8) == -1 && is_occupied(b8) == -1){
+        if((castling_rights & 8) && is_occupied(d8) == -1 && is_occupied(c8) == -1 && is_occupied(b8) == -1){
             moves.push_back(Move(e8,c8,3)); 
         }
     }
@@ -585,4 +713,192 @@ vector<Move> Board::generate_pawn_moves(int pos){
         }
     }
     return moves;
+}
+void Board::zobrist_init(){
+    zobrist_keys.resize(793);
+    for(int i=0;i<793;i++){
+        zobrist_keys[i] = ((unsigned long long int)rand()<<32) | rand();
+    }
+    zobrist_hash = 0;
+}
+
+void Board::make_move(Move m){
+    bitboard_history.push_back(bitboard);
+    castling_rights_history.push_back(castling_rights);
+    en_passant_history.push_back(en_passant);
+    halfmove_clock_history.push_back(halfmove_clock);
+    int from = m.from;
+    int to = m.to;
+    int flags = m.flags;
+    int piece = is_occupied(from);
+
+    if(piece == W_PAWN || piece== B_PAWN || flags == 4 ){
+        halfmove_clock = 0;
+    }
+    else{
+        halfmove_clock++;
+    }
+
+    if(active_color == black){
+        fullmove_number++;
+    }
+
+    if((piece == W_KING || piece == B_KING) && (flags != 2 && flags != 3)){
+        castling_rights &= ~(active_color == white?3:12);
+    }
+    else if(piece == W_ROOK){
+        if(from == a1){
+            castling_rights &= ~2;
+        }
+        else if(from == h1){
+            castling_rights &= ~1;
+        }
+    }
+    else if(piece == B_ROOK){
+        if(from == a8){
+            castling_rights &= ~8;
+        }
+        else if(from == h8){
+            castling_rights &= ~4;
+        }
+    }
+    if(flags == 4 || flags >= 12){
+        int captured_piece = is_occupied(to);
+        if(captured_piece == W_ROOK){
+            if(to == a1){
+                castling_rights &= ~2;
+            }
+            else if(to == h1){
+                castling_rights &= ~1;
+            }
+        }
+        else if(captured_piece == B_ROOK){
+            if(to == a8){
+                castling_rights &= ~8;
+            }
+            else if(to == h8){
+                castling_rights &= ~4;
+            }
+        }
+    }
+
+    en_passant = square_nb;
+    if(flags == 0){
+        bitboard[piece] &= ~(1ULL << from);
+        bitboard[piece] |= (1ULL << to);
+    }
+    else if(flags == 1){
+        bitboard[piece] &= ~(1ULL << from);
+        bitboard[piece] |= (1ULL << to);
+        if(piece == W_PAWN){
+            en_passant = from + 8;
+        }
+        else{
+            en_passant = from - 8;
+        }
+    }
+    else if(flags == 2){
+        bitboard[piece] &= ~(1ULL << from);
+        bitboard[piece] |= (1ULL << to);
+        if(active_color == white){
+            bitboard[W_ROOK] &= ~(1ULL << h1);
+            bitboard[W_ROOK] |= (1ULL << f1);
+        }
+        else{
+            bitboard[B_ROOK] &= ~(1ULL << h8);
+            bitboard[B_ROOK] |= (1ULL << f8);
+        }
+        castling_rights &= ~(active_color == white?3:12);
+    }
+    else if(flags == 3){
+        bitboard[piece] &= ~(1ULL << from);
+        bitboard[piece] |= (1ULL << to);
+        if(active_color == white){
+            bitboard[W_ROOK] &= ~(1ULL << a1);
+            bitboard[W_ROOK] |= (1ULL << d1);
+        }
+        else{
+            bitboard[B_ROOK] &= ~(1ULL << a8);
+            bitboard[B_ROOK] |= (1ULL << d8);
+        }
+        castling_rights &= ~(active_color == white?3:12);
+    }
+    else if(flags == 4){
+        int captured_piece = is_occupied(to);
+        bitboard[captured_piece] &= ~(1ULL << to);
+        bitboard[piece] &= ~(1ULL << from);
+        bitboard[piece] |= (1ULL << to);
+    }
+    else if(flags == 5){
+        bitboard[piece] &= ~(1ULL << from);
+        bitboard[piece] |= (1ULL << to);
+        if(active_color == white){
+            bitboard[B_PAWN] &= ~(1ULL << (to - 8));
+        }
+        else{
+            bitboard[W_PAWN] &= ~(1ULL << (to + 8));
+        }
+    }
+    else if(flags >= 8 && flags <= 11){
+        int promotion_piece = 0;
+        if(flags == 8){
+            promotion_piece = W_KNIGHT;
+        }
+        else if(flags == 9){
+            promotion_piece = W_BISHOP;
+        }
+        else if(flags == 10){
+            promotion_piece = W_ROOK;
+        }
+        else if(flags == 11){
+            promotion_piece = W_QUEEN;
+        }
+        if(active_color == black){
+            promotion_piece += 6;
+        }
+        bitboard[piece] &= ~(1ULL << from);
+        bitboard[piece] |= (1ULL << to);
+        bitboard[piece] &= ~(1ULL << to);
+        bitboard[promotion_piece] |= (1ULL << to);
+    }
+    else if(flags >= 12 && flags <= 15){
+        int promotion_piece =0;
+        if(flags == 12){
+            promotion_piece = W_KNIGHT;
+        }
+        else if(flags == 13){
+            promotion_piece = W_BISHOP;
+        }
+        else if(flags == 14){
+            promotion_piece = W_ROOK;
+        }
+        else if(flags == 15){
+            promotion_piece = W_QUEEN;
+        }
+        if(active_color == black){
+            promotion_piece += 6;
+        }
+        int captured_piece = is_occupied(to);
+        bitboard[captured_piece] &= ~(1ULL << to);
+        bitboard[piece] &= ~(1ULL << from);
+        bitboard[piece] |= (1ULL << to);
+        bitboard[piece] &= ~(1ULL << to);
+        bitboard[promotion_piece] |= (1ULL << to);
+    }
+    active_color ^= 1;
+}
+
+void Board::unmake_move(Move m){
+    bitboard = bitboard_history.back();
+    bitboard_history.pop_back();
+    castling_rights = castling_rights_history.back();
+    castling_rights_history.pop_back();
+    en_passant = en_passant_history.back();
+    en_passant_history.pop_back();
+    halfmove_clock = halfmove_clock_history.back();
+    halfmove_clock_history.pop_back();
+    active_color ^= 1;
+    if(active_color == black){
+        fullmove_number--;
+    }
 }
