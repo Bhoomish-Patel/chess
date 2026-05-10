@@ -3,21 +3,19 @@
 #include "moves.hpp"
 #include<string>
 #include<iostream>
+#include<random>
 using namespace std;
 
 Board:: Board(): Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"){}
 Board:: Board(string fen){
     vector<string>partitions = split(fen);
-    //bitboard
     set_bitboard(partitions[0],bitboard);
-    //active color
     if(partitions[1]=="w"){
         active_color = white;
     }
     else{
         active_color = black;
     }
-    //castling rights
     castling_rights = 0;
     string castling_rights_str = partitions[2];
     for(int i=0;i<castling_rights_str.size();i++){
@@ -34,17 +32,15 @@ Board:: Board(string fen){
             castling_rights |= (2);
         }
     }
-    //enpassant 
     if(partitions[3]=="-"){
         en_passant = square_nb;
     }
     else{
     en_passant = str_to_pos(partitions[3]);
     }
-    //halfmove clock 
     halfmove_clock = stoi(partitions[4]);
-    //fullmove clock
     fullmove_number = stoi(partitions[5]);
+    zobrist_init();
 }
 int Board:: is_occupied(int pos){
     for(int i=0;i<12;i++){
@@ -56,7 +52,6 @@ int Board:: is_occupied(int pos){
 }
 unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int &checking_piece_square){
     unsigned long  long int attack_squares = 0;
-    //generate attack squares for pawns
     vector<unsigned long long int>temp = bitboard;
     int cur_king = active_color== white?0:6 + W_KING;
     for(int i=0;i<64;i++){
@@ -128,7 +123,6 @@ unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int
             }
         }
     }
-    //opponent knight
     int opponent_knight = (active_color == white) ? B_KNIGHT : W_KNIGHT;
      for(int i=0;i<64;i++){
         if((bitboard[opponent_knight]>>i)&1){
@@ -150,7 +144,6 @@ unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int
             }
         }
     }
-    //opponent bishop
     int opponent_bishop = (active_color == white) ? B_BISHOP : W_BISHOP;
     for(int i=0;i<64;i++){
         if((bitboard[opponent_bishop]>>i)&1){
@@ -178,7 +171,6 @@ unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int
             }
         }
     }
-    //opponent rook
     int opponent_rook = (active_color == white) ? B_ROOK : W_ROOK;
     for(int i=0;i<64;i++){
         if((bitboard[opponent_rook]>>i)&1){
@@ -206,7 +198,6 @@ unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int
             }
         }
     }
-    //opponent queen
     int opponent_queen = (active_color == white) ? B_QUEEN : W_QUEEN;
     for(int i=0;i<64;i++){
         if((bitboard[opponent_queen]>>i)&1){
@@ -234,7 +225,6 @@ unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int
             }
         }
     }
-    //opponent king
     int opponent_king = (active_color == white) ? B_KING : W_KING;
     for(int i=0;i<64;i++){
         if((bitboard[opponent_king]>>i)&1){
@@ -262,12 +252,6 @@ unsigned long long int Board::generate_attack_squares(int pos,int &cnt_check,int
     return attack_squares;
 }
 
-//checks:
-//1.king move to an attacked squares
-//2.Check - i) double check - only king moves
-//          ii)single check = move  king,block the check,capture the checking piece
-//3.pinned pieces
-//4.other moves
 vector<Move> Board:: generate_legal_moves(){
     vector<Move> all_moves = generate_pseudo_legal_moves();
     int cur_king = active_color== white?0:6 + W_KING;
@@ -292,13 +276,11 @@ vector<Move> Board:: generate_legal_moves(){
                     continue;
                 }
             }
-            //enpassant discovered check
             if(cur.flags == 5){
                 int r_cur_king = cur_king_pos/8;
                 int c_cur_king = cur_king_pos%8;
                 if(r_cur_king== cur.from/8){
-                    //check if opponent has a rook or a queen on this row after removal of both pawns if they check our king
-                    bool is_discovered_check = false;
+                   bool is_discovered_check = false;
                     for(int c = c_cur_king+1;c<8;c++){
                         if(c == cur.to%8 || c == cur.from%8){
                             continue;
@@ -714,24 +696,24 @@ vector<Move> Board::generate_pawn_moves(int pos){
     }
     return moves;
 }
-void Board::zobrist_init(){
-    zobrist_keys.resize(793);
-    for(int i=0;i<793;i++){
-        zobrist_keys[i] = ((unsigned long long int)rand()<<32) | rand();
-    }
-    zobrist_hash = 0;
-}
-
 void Board::make_move(Move m){
     bitboard_history.push_back(bitboard);
     castling_rights_history.push_back(castling_rights);
     en_passant_history.push_back(en_passant);
     halfmove_clock_history.push_back(halfmove_clock);
+    zobrist_history.push_back(zobrist_hash);
     int from = m.from;
     int to = m.to;
     int flags = m.flags;
     int piece = is_occupied(from);
-
+    zobrist_hash^=zobrist_keys[piece*64 + from];
+    zobrist_hash^=zobrist_keys[piece*64 + to];
+    if(en_passant != square_nb){
+        zobrist_hash ^= zobrist_keys[784 + en_passant%8];
+    }
+    if(active_color == black){
+        zobrist_hash ^= zobrist_keys[792];
+    }
     if(piece == W_PAWN || piece== B_PAWN || flags == 4 ){
         halfmove_clock = 0;
     }
@@ -742,7 +724,7 @@ void Board::make_move(Move m){
     if(active_color == black){
         fullmove_number++;
     }
-
+    zobrist_hash ^= zobrist_keys[768 + castling_rights];
     if((piece == W_KING || piece == B_KING) && (flags != 2 && flags != 3)){
         castling_rights &= ~(active_color == white?3:12);
     }
@@ -781,7 +763,6 @@ void Board::make_move(Move m){
             }
         }
     }
-
     en_passant = square_nb;
     if(flags == 0){
         bitboard[piece] &= ~(1ULL << from);
@@ -803,10 +784,14 @@ void Board::make_move(Move m){
         if(active_color == white){
             bitboard[W_ROOK] &= ~(1ULL << h1);
             bitboard[W_ROOK] |= (1ULL << f1);
+            zobrist_hash ^= zobrist_keys[W_ROOK*64 + h1];
+            zobrist_hash ^= zobrist_keys[W_ROOK*64 + f1];
         }
         else{
             bitboard[B_ROOK] &= ~(1ULL << h8);
             bitboard[B_ROOK] |= (1ULL << f8);
+            zobrist_hash ^= zobrist_keys[B_ROOK*64 + h8];
+            zobrist_hash ^= zobrist_keys[B_ROOK*64 + f8];
         }
         castling_rights &= ~(active_color == white?3:12);
     }
@@ -816,10 +801,14 @@ void Board::make_move(Move m){
         if(active_color == white){
             bitboard[W_ROOK] &= ~(1ULL << a1);
             bitboard[W_ROOK] |= (1ULL << d1);
+            zobrist_hash ^= zobrist_keys[W_ROOK*64 + a1];
+            zobrist_hash ^= zobrist_keys[W_ROOK*64 + d1];
         }
         else{
             bitboard[B_ROOK] &= ~(1ULL << a8);
             bitboard[B_ROOK] |= (1ULL << d8);
+            zobrist_hash ^= zobrist_keys[B_ROOK*64 + a8];
+            zobrist_hash ^= zobrist_keys[B_ROOK*64 + d8];
         }
         castling_rights &= ~(active_color == white?3:12);
     }
@@ -828,15 +817,18 @@ void Board::make_move(Move m){
         bitboard[captured_piece] &= ~(1ULL << to);
         bitboard[piece] &= ~(1ULL << from);
         bitboard[piece] |= (1ULL << to);
+        zobrist_hash ^= zobrist_keys[captured_piece*64 + to];
     }
     else if(flags == 5){
         bitboard[piece] &= ~(1ULL << from);
         bitboard[piece] |= (1ULL << to);
         if(active_color == white){
             bitboard[B_PAWN] &= ~(1ULL << (to - 8));
+            zobrist_hash ^= zobrist_keys[B_PAWN*64 + (to-8)];
         }
         else{
             bitboard[W_PAWN] &= ~(1ULL << (to + 8));
+            zobrist_hash ^= zobrist_keys[W_PAWN*64 + (to+8)];
         }
     }
     else if(flags >= 8 && flags <= 11){
@@ -860,6 +852,8 @@ void Board::make_move(Move m){
         bitboard[piece] |= (1ULL << to);
         bitboard[piece] &= ~(1ULL << to);
         bitboard[promotion_piece] |= (1ULL << to);
+        zobrist_hash ^= zobrist_keys[piece*64 + to];
+        zobrist_hash ^= zobrist_keys[promotion_piece*64 + to];
     }
     else if(flags >= 12 && flags <= 15){
         int promotion_piece =0;
@@ -884,8 +878,18 @@ void Board::make_move(Move m){
         bitboard[piece] |= (1ULL << to);
         bitboard[piece] &= ~(1ULL << to);
         bitboard[promotion_piece] |= (1ULL << to);
+        zobrist_hash ^= zobrist_keys[piece*64 + to];
+        zobrist_hash ^= zobrist_keys[promotion_piece*64 + to];
+        zobrist_hash ^= zobrist_keys[captured_piece*64 + to];
     }
     active_color ^= 1;
+    zobrist_hash ^= zobrist_keys[768 + castling_rights];
+    if(en_passant != square_nb){
+        zobrist_hash ^= zobrist_keys[784 + en_passant%8];
+    }
+    if(active_color == black){
+        zobrist_hash ^= zobrist_keys[792];
+    }
 }
 
 void Board::unmake_move(Move m){
@@ -900,5 +904,30 @@ void Board::unmake_move(Move m){
     active_color ^= 1;
     if(active_color == black){
         fullmove_number--;
+    }
+    zobrist_hash = zobrist_history.back();
+    zobrist_history.pop_back();
+}
+
+void Board::zobrist_init(){
+    zobrist_keys.resize(793);
+    std::mt19937_64 rng(0xDEADBEEF);
+    for(int i = 0; i < 793; i++) {
+        zobrist_keys[i] = rng();
+    }
+    zobrist_hash = 0;
+    for(int i=0;i<12;i++){
+        for(int j=0;j<64;j++){
+            if((bitboard[i]>>j)&1){
+                zobrist_hash ^= zobrist_keys[i*64 + j];
+            }
+        }
+    }
+    zobrist_hash ^= zobrist_keys[castling_rights+768];
+    if(en_passant != square_nb){
+        zobrist_hash ^= zobrist_keys[784 + en_passant%8];
+    }
+    if(active_color == black){
+        zobrist_hash ^= zobrist_keys[792];
     }
 }

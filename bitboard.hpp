@@ -24,6 +24,7 @@ class Board{
         vector<int> castling_rights_history;
         vector<int> en_passant_history;
         vector<int> halfmove_clock_history;
+        vector<long long int>zobrist_history;
         unsigned long long int zobrist_hash;
         vector<unsigned long long int>zobrist_keys;
         vector<Move> generate_king_moves(int pos);

@@ -1,5 +1,5 @@
 import chess
-
+import time
 def perft(board, depth):
     if depth == 0:
         return 1
@@ -33,12 +33,14 @@ def divide(board, depth):
     print("Total:", total)
 
 
-board = chess.Board("3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1")
+board = chess.Board("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1")
 
 # Example:
 # board.push_uci("d8c7")
 # board.push_uci("e8f7")
 # board.push_uci("f3h5")
-depth = 1
-
+depth = 4
+start = time.time()
 divide(board, depth)
+end = time.time()
+print("Time taken",(end-start)*1000,"ms")
