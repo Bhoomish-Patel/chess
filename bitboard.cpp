@@ -931,3 +931,30 @@ void Board::zobrist_init(){
         zobrist_hash ^= zobrist_keys[792];
     }
 }
+bool Board::is_stalemate(){
+    if(checks == 0){
+        if(generate_legal_moves().size() == 0){
+            return 1;
+        }
+    }
+    return 0;
+}
+bool Board::is_checkmate(){
+    if(checks){
+        if(generate_legal_moves().size() == 0){
+            return 1;
+        }
+    }
+    return 0;
+}
+bool Board::is_fifty_move_draw(){
+    return halfmove_clock >= 100;
+}
+bool Board::is_three_fold_repetition(){
+    int count = 0;
+    for(auto hash : zobrist_history) {
+        if(hash == zobrist_hash) count++;
+        if(count >= 3) return true;
+    }
+    return false;
+}

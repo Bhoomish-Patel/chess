@@ -37,5 +37,9 @@ class Board{
         void make_move(Move m);
         void unmake_move(Move m);
         unsigned  long long int generate_attack_squares(int pos,int&cnt_check,int &checking_piece_square);
+        bool is_stalemate();
+        bool is_checkmate();
+        bool is_fifty_move_draw();
+        bool is_three_fold_repetition();
 };
 #endif
