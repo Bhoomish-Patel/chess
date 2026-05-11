@@ -5,7 +5,6 @@
 #include "types.hpp"
 #include "pieces.hpp"
 #include "moves.hpp"
-using namespace std;
 class Board{
     public:
         vector<unsigned  long long int>bitboard;
