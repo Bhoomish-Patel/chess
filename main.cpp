@@ -24,10 +24,10 @@ long long int perft(Board &board,int depth,int root_depth){
 }
 
 int main(){
-    Board board("3q4/4k3/8/8/4K3/3R4/8/8 w - - 0 1");
+    Board board("8/2k5/7R/6R1/4K3/8/8/8 w - - 0 1");
     auto start = chrono::high_resolution_clock::now();
-    Move move = search(board,2);
-    cout<<"Final move"<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<endl;
+    Move move = search(board,3);
+    cout<<"Final move "<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<endl;
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
     cout << "Time taken: " << duration.count() << " ms" << endl;

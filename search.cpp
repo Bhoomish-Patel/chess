@@ -4,50 +4,35 @@
 #include<iostream>
 using namespace std;
 Move search(Board& board,int depth){
-
-    int mx = -2147483648;
-
+    int mx = INT32_MIN;
     Move best_move(square_nb,square_nb,-1);
-
     vector<Move> all_moves = board.generate_legal_moves();
-
     for(auto move : all_moves){
-        cout<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<endl;
         board.make_move(move);
-
         int score = -negamax(board,depth - 1);
-
         board.unmake_move(move);
-
         if(score > mx){
             mx = score;
             best_move = move;
         }
     }
-
     return best_move;
 }
 
 int negamax(Board& board,int depth){
-
     if(depth == 0){
         return evaluate(board);
     }
-
     int mx = INT32_MIN;
-
     vector<Move> all_moves = board.generate_legal_moves();
-
+    if(all_moves.size() == 0){
+        return evaluate(board);
+    }
     for(auto move : all_moves){
-
         board.make_move(move);
-
         int score = -negamax(board,depth - 1);
-
         board.unmake_move(move);
-
         mx = max(mx,score);
     }
-
     return mx;
 }

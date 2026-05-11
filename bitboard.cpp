@@ -940,12 +940,7 @@ bool Board::is_stalemate(){
     return 0;
 }
 bool Board::is_checkmate(){
-    if(checks){
-        if(generate_legal_moves().size() == 0){
-            return 1;
-        }
-    }
-    return 0;
+    return (generate_legal_moves().size() == 0) && checks;
 }
 bool Board::is_fifty_move_draw(){
     return halfmove_clock >= 100;
