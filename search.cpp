@@ -34,7 +34,7 @@ int negamax(Board& board,int depth){
         return evaluate(board);
     }
 
-    int mx = -2147483648;
+    int mx = INT32_MIN;
 
     vector<Move> all_moves = board.generate_legal_moves();
 
