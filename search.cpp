@@ -1,7 +1,7 @@
-#include "bitboard.hpp"
-#include "utils.hpp"
+#include "search.hpp"
 #include "moves.hpp"
 #include "evaluation.hpp"
+#include<iostream>
 using namespace std;
 Move search(Board& board,int depth){
 
@@ -12,7 +12,7 @@ Move search(Board& board,int depth){
     vector<Move> all_moves = board.generate_legal_moves();
 
     for(auto move : all_moves){
-
+        cout<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<endl;
         board.make_move(move);
 
         int score = -negamax(board,depth - 1);

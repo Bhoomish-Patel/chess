@@ -1,5 +1,6 @@
 #include "bitboard.hpp"
 #include "utils.hpp"
+#include "search.hpp"
 #include<chrono>
 #include<bits/stdc++.h>
 using namespace std;
@@ -23,11 +24,10 @@ long long int perft(Board &board,int depth,int root_depth){
 }
 
 int main(){
-    Board board("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1");
-    int depth;
-    cin >> depth;
+    Board board("3q4/4k3/8/8/4K3/3R4/8/8 w - - 0 1");
     auto start = chrono::high_resolution_clock::now();
-    cout << perft(board,depth,depth) << endl;
+    Move move = search(board,2);
+    cout<<"Final move"<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<endl;
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
     cout << "Time taken: " << duration.count() << " ms" << endl;

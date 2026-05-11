@@ -3,5 +3,6 @@
 #include "bitboard.hpp"
 #include "utils.hpp"
 #include "moves.hpp"
-Move search(Board board,int depth);
+Move search(Board &board,int depth);
+int negamax(Board& board,int depth);
 #endif
