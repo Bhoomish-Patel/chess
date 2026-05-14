@@ -3,7 +3,7 @@
 #include <iostream>
 int evaluate(Board board){
     if(board.is_checkmate()){
-        return -INT32_MAX;
+        return INT32_MIN;
     }
     else if(board.is_stalemate()){
         return 0;

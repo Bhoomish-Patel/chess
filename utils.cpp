@@ -1,6 +1,7 @@
 #include "utils.hpp"
 #include "types.hpp"
 #include "pieces.hpp"
+#include "bitboard.hpp"
 #include<iostream>
 vector<string> split(string fen){
     vector<string> partitions;
@@ -207,3 +208,20 @@ map<int,unsigned  long long int> find_pinned_piece_moves(vector<unsigned  long l
     return ans;
 }
 
+long long int perft(Board &board,int depth,int root_depth){
+    if(depth == 0){
+        return 1;
+    }
+    vector<Move> moves = board.generate_legal_moves();
+    long long int nodes = 0;
+    for(Move m : moves){
+        board.make_move(m);
+        long long int child = perft(board,depth-1,root_depth);
+        if(depth == root_depth){
+            cout << pos_to_str(m.from)<< pos_to_str(m.to) << ": " << child << endl;
+        }
+        nodes += child;
+        board.unmake_move(m);
+    }
+    return nodes;
+}
