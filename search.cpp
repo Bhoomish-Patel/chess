@@ -10,7 +10,7 @@ Move search(Board& board,int depth){
     for(auto move : all_moves){
         board.make_move(move);
         int score = -alpha_beta(board,depth - 1,INT32_MIN,INT32_MAX);
-        cout<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<" "<<score<<endl;
+        // cout<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<" "<<score<<endl;
         board.unmake_move(move);
         if(score > mx){
             mx = score;
