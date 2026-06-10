@@ -149,77 +149,21 @@ unsigned  long long int find_slider_squares(int start_square,int end_square){
     return slider_squares;
     
 }
-map<int,unsigned  long long int> find_pinned_piece_moves(vector<unsigned  long long int>bitboard,int king_pos){
-    vector<int> r_incs = {-1,0,1};
-    vector<int> c_incs = {-1,0,1};
-    int r_king = king_pos/8;
-    int c_king = king_pos%8;
-    int cur_king = get_piece_at_pos(bitboard,king_pos);
-    map<int,unsigned long long int>ans;
-    for(int i=0;i<3;i++){
-        for(int j=0;j<3;j++){
-            int r_inc = r_incs[i];
-            int c_inc = c_incs[j];
-            int r_cur = r_king + r_inc;
-            int c_cur = c_king + c_inc;
-            if(r_inc == 0 && c_inc ==0)continue;
-            int attack_piece_pos = -1 ,pinned_piece_pos = -1;
-            while(r_cur<8 && r_cur>=0 && c_cur>=0 && c_cur<8){
-                int cur_piece = get_piece_at_pos(bitboard,r_cur*8 + c_cur);
-                if(cur_piece!=-1){
-                    if(pinned_piece_pos == -1 && get_piece_type(cur_piece) == get_piece_type(cur_king)){
-                        pinned_piece_pos = r_cur*8 + c_cur;
-                    }
-                    else if(pinned_piece_pos!=-1 &&  get_piece_type(cur_piece) == get_piece_type(cur_king)){
-                        break;
-                    }
-                    else{
-                        attack_piece_pos = r_cur*8 + c_cur;
-                        break;
-                    }
-                }
-                r_cur += r_inc;
-                c_cur += c_inc;
-            }
-            if(pinned_piece_pos == -1 || attack_piece_pos == -1){
-                continue;
-            }
-            int piece_type = get_piece_at_pos(bitboard,attack_piece_pos);
-            int active_color = get_piece_type(cur_king);
-            // cout<<pos_to_str(attack_piece_pos)<<" "<<pos_to_str(pinned_piece_pos)<<endl;
-            // cout<<active_color<<" "<<piece_type<<endl;
-            // cout<<r_inc<<" "<<c_inc<<endl;
-            // cout<<piece_type<<" "<<(active_color ==0 ? B_QUEEN : W_QUEEN)<<endl;
-            if(r_inc == 0 || c_inc ==0){
-                if((piece_type !=  (active_color == 0 ? B_ROOK : W_ROOK)) && (piece_type != (active_color == 0 ? B_QUEEN : W_QUEEN))){
-                    continue;
-                }
-            }
-            else{
-                if((piece_type != (active_color == 0 ? B_BISHOP : W_BISHOP)) && (piece_type != (active_color == 0 ? B_QUEEN : W_QUEEN))){
-                    continue;
-                }
-            }
-            unsigned long long int slider_moves = find_slider_squares(king_pos,attack_piece_pos);
-            slider_moves |=(1ull<<attack_piece_pos);
-            ans[pinned_piece_pos] = slider_moves;
-        }
-    }
-    return ans;
-}
-
 long long int perft(Board &board,int depth,int root_depth){
     if(depth == 0){
         return 1;
     }
     vector<Move> moves = board.generate_legal_moves();
+    if(depth == 1){
+        return (int)moves.size();
+    }
     long long int nodes = 0;
     for(Move m : moves){
         board.make_move(m);
         long long int child = perft(board,depth-1,root_depth);
-        if(depth == root_depth){
-            cout << pos_to_str(m.from)<< pos_to_str(m.to) << ": " << child << endl;
-        }
+        // if(depth == root_depth){
+        //     cout << pos_to_str(m.from)<< pos_to_str(m.to) << ": " << child << endl;
+        // }
         nodes += child;
         board.unmake_move(m);
     }

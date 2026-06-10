@@ -2,7 +2,6 @@
 #define UTILS_HPP
 #include<string>
 #include<vector>
-#include<map>
 #include "bitboard.hpp"
 using namespace std;
 vector<string> split(string fen);
@@ -15,5 +14,4 @@ int get_piece_at_pos(vector<unsigned  long long int>bitboard,int pos);
 vector<int> find_active_pos(vector<unsigned  long long int>bitboard,int piece_type);
 unsigned  long long int find_slider_squares(int start_square,int end_square);
 long long int perft(Board &board,int depth,int root_depth);
-map<int,unsigned  long long int> find_pinned_piece_moves(vector<unsigned  long long int>bitboard,int king_pos);
 #endif

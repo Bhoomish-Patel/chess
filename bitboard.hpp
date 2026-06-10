@@ -2,6 +2,7 @@
 #define BITBOARD_H
 #include<vector>
 #include<string>
+#include<map>
 #include "types.hpp"
 #include "pieces.hpp"
 #include "moves.hpp"
@@ -15,6 +16,8 @@ class Board{
         int halfmove_clock;
         int fullmove_number;
         int checks;
+        vector<int> mail_box;
+        void set_mail_box();
         Board();
         Board(string fen);
         vector<Move> generate_pseudo_legal_moves();
@@ -41,5 +44,6 @@ class Board{
         bool is_checkmate();
         bool is_fifty_move_draw();
         bool is_three_fold_repetition();
+        map<int,unsigned  long long int> find_pinned_piece_moves(int king_pos);
 };
 #endif

@@ -2,16 +2,17 @@
 #include "utils.hpp"
 #include "search.hpp"
 #include<chrono>
-#include<bits/stdc++.h>
+#include<iostream>
 using namespace std;
 int main(){
     Board board;
-    auto start = chrono::high_resolution_clock::now();
-    Move move = search(board,4);
+    int depth;
+    cin>>depth;
+    auto t_start = chrono::high_resolution_clock::now();
+    int node = perft(board,depth,depth);
     // board.make_move(Move(str_to_pos("b5"),str_to_pos("b7"),0));
-    cout<<"Final move "<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<endl;
-    auto end = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-    cout << "Time taken: " << duration.count() << " ms" << endl;
+    auto t_end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(t_end - t_start);
+    cout<<"Nodes processed:"<< node<< " Time taken: " << duration.count() << " ms" << " (" << ((double)node * 1000 / (double)duration.count()) << " nodes/s)" << endl;
     return 0;
 }   
