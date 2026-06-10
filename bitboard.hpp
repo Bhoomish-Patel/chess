@@ -3,47 +3,49 @@
 #include<vector>
 #include<string>
 #include<map>
+#include<array>
+#include<string>
+#include<iostream>
+#include<random>
 #include "types.hpp"
 #include "pieces.hpp"
 #include "moves.hpp"
 using namespace std;
 class Board{
     public:
-        vector<unsigned  long long int>bitboard;
-        int castling_rights;
-        int en_passant;
+        array<uint64_t,12>bitboard;
+        uint8_t castling_rights;
+        uint8_t en_passant;
         bool active_color;
-        int halfmove_clock;
-        int fullmove_number;
-        int checks;
-        vector<int> mail_box;
-        void set_mail_box();
+        uint8_t halfmove_clock;
+        uint32_t fullmove_number;
+        uint8_t checks;
         Board();
         Board(string fen);
         vector<Move> generate_pseudo_legal_moves();
         int is_occupied(int pos);
         void zobrist_init();
-        vector<vector<unsigned long long int>> bitboard_history;
-        vector<int> castling_rights_history;
-        vector<int> en_passant_history;
-        vector<int> halfmove_clock_history;
-        vector<long long int>zobrist_history;
-        unsigned long long int zobrist_hash;
-        vector<unsigned long long int>zobrist_keys;
-        vector<Move> generate_king_moves(int pos);
-        vector<Move> generate_queen_moves(int pos);
-        vector<Move> generate_rook_moves(int pos);
-        vector<Move> generate_bishop_moves(int pos);
-        vector<Move> generate_knight_moves(int pos);
+        vector<array<uint64_t,12>> bitboard_history;
+        vector<uint8_t> castling_rights_history;
+        vector<uint8_t> en_passant_history;
+        vector<uint8_t> halfmove_clock_history;
+        vector<uint64_t>zobrist_history;
+        uint64_t zobrist_hash;
+        vector<uint64_t>zobrist_keys;
+        vector<Move> generate_king_moves(uint8_t pos);
+        vector<Move> generate_queen_moves(uint8_t pos);
+        vector<Move> generate_rook_moves(uint8_t pos);
+        vector<Move> generate_bishop_moves(uint8_t pos);
+        vector<Move> generate_knight_moves(uint8_t pos);
         vector<Move> generate_pawn_moves(int pos);
         vector<Move> generate_legal_moves();
         void make_move(Move m);
         void unmake_move(Move m);
-        unsigned  long long int generate_attack_squares(int pos,int&cnt_check,int &checking_piece_square);
+        uint64_t generate_attack_squares(uint8_t pos,uint8_t&cnt_check,uint8_t &checking_piece_square);
         bool is_stalemate();
         bool is_checkmate();
         bool is_fifty_move_draw();
         bool is_three_fold_repetition();
-        map<int,unsigned  long long int> find_pinned_piece_moves(int king_pos);
+        map<uint8_t,uint64_t> find_pinned_piece_moves(uint8_t king_pos);
 };
 #endif

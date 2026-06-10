@@ -32,13 +32,11 @@ int str_to_pos(string str){
     return pos;
 }   
 
-void set_bitboard(string board_str, vector<unsigned  long long int>& bitboard){
-    bitboard.assign(12, 0);
+void set_bitboard(string board_str, array<uint64_t,12>& bitboard){
+    uint8_t row = 7;
+    uint8_t col = 0;
 
-    int row = 7;
-    int col = 0;
-
-    for(int i = 0; i < board_str.size(); i++){
+    for(uint8_t i = 0; i < board_str.size(); i++){
         if(board_str[i] == '/'){
             row--;
             col = 0;
@@ -47,7 +45,7 @@ void set_bitboard(string board_str, vector<unsigned  long long int>& bitboard){
             col += (board_str[i] - '0');
         }
         else{
-            int pos = row * 8 + col;
+            uint8_t pos = row * 8 + col;
 
             if(board_str[i] == 'K') bitboard[0] |= (1LL << pos);
             else if(board_str[i] == 'Q') bitboard[1] |= (1LL << pos);
@@ -66,24 +64,24 @@ void set_bitboard(string board_str, vector<unsigned  long long int>& bitboard){
     }
 }
 
-void print_bitboard(vector<unsigned  long long int> &bitboard){
+void print_bitboard(array<uint64_t,12> &bitboard){
     char board[64];
     for(int i = 0; i < 64; i++) board[i] = '.';
     char pieces[12] = {
         'K','Q','R','B','N','P',
         'k','q','r','b','n','p'
     };
-    for(int p = 0; p < 12; p++){
-        for(int sq = 0; sq < 64; sq++){
+    for(uint8_t p = 0; p < 12; p++){
+        for(uint8_t sq = 0; sq < 64; sq++){
             if(bitboard[p] & (1ULL << sq)){
                 board[sq] = pieces[p];
             }
         }
     }
-    for(int row = 7; row >= 0; row--){
+    for(int8_t row = 7; row >= 0; row--){
         cout << row + 1 << " ";
-        for(int col = 0; col < 8; col++){
-            int sq = row * 8 + col;
+        for(uint8_t col = 0; col < 8; col++){
+            uint8_t sq = row * 8 + col;
             cout << board[sq] << " ";
         }
         cout << endl;
@@ -91,19 +89,19 @@ void print_bitboard(vector<unsigned  long long int> &bitboard){
     cout << "  a b c d e f g h" << endl;
 }
 
-int get_piece_type(int piece){
+bool get_piece_type(uint8_t piece){
     if(piece/6 == 1) return black;
     else return white;
 }
-int get_piece_at_pos(vector<unsigned  long long int>bitboard,int pos){
-    for(int i=0;i<12;i++){
+uint8_t get_piece_at_pos(array<uint64_t,12>bitboard,uint8_t pos){
+    for(uint8_t i=0;i<12;i++){
         if((bitboard[i]>>pos)&1LL){
             return i;
         }
     }
     return -1;
 }
-vector<int> find_active_pos(vector<unsigned  long long int>bitboard,int piece_type){
+vector<int> find_active_pos(array<uint64_t,12>bitboard,uint8_t piece_type){
     vector<int>pos;
     for(int i=0;i<64;i++){
         if((bitboard[piece_type]>>i)&1){
@@ -112,28 +110,28 @@ vector<int> find_active_pos(vector<unsigned  long long int>bitboard,int piece_ty
     }
     return pos;
 }
-unsigned  long long int find_slider_squares(int start_square,int end_square){
-    int s_row = start_square/8;
-    int s_col = start_square%8;
-    int e_row = end_square/8;
-    int e_col = end_square%8;
-    unsigned  long long int slider_squares = 0;
+uint64_t find_slider_squares(uint8_t start_square,uint8_t end_square){
+    uint8_t s_row = start_square/8;
+    uint8_t s_col = start_square%8;
+    uint8_t e_row = end_square/8;
+    uint8_t e_col = end_square%8;
+    uint64_t slider_squares = 0;
 
     if(s_row == e_row){
-        for(int i=min(s_col,e_col);i<=max(s_col,e_col);i++){
+        for(uint8_t i=min(s_col,e_col);i<=max(s_col,e_col);i++){
             slider_squares = slider_squares|(1ull<<(i+s_row*8));
         }
         return slider_squares;
     }
 
     if(s_col == e_col){
-        for(int i=min(s_row,e_row);i<=max(s_row,e_row);i++){
+        for(uint8_t i=min(s_row,e_row);i<=max(s_row,e_row);i++){
             slider_squares = slider_squares|(1ull<<(s_col + i*8));
         }
         return slider_squares;
     }
 
-    int r_inc = -1 ,c_inc = -1;
+    int8_t r_inc = -1 ,c_inc = -1;
     if(s_col < e_col ){
         c_inc = 1;
     }
@@ -149,7 +147,7 @@ unsigned  long long int find_slider_squares(int start_square,int end_square){
     return slider_squares;
     
 }
-long long int perft(Board &board,int depth,int root_depth){
+uint64_t perft(Board &board,int depth,int root_depth){
     if(depth == 0){
         return 1;
     }
@@ -157,10 +155,10 @@ long long int perft(Board &board,int depth,int root_depth){
     if(depth == 1){
         return (int)moves.size();
     }
-    long long int nodes = 0;
+    uint64_t nodes = 0;
     for(Move m : moves){
         board.make_move(m);
-        long long int child = perft(board,depth-1,root_depth);
+        uint64_t child = perft(board,depth-1,root_depth);
         // if(depth == root_depth){
         //     cout << pos_to_str(m.from)<< pos_to_str(m.to) << ": " << child << endl;
         // }

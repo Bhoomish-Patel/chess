@@ -5,7 +5,7 @@
 using namespace std;
 Move search(Board& board,int depth){
     int mx = INT32_MIN;
-    Move best_move(square_nb,square_nb,-1);
+    Move best_move(square_nb, square_nb, 0xFF);
     vector<Move> all_moves = board.generate_legal_moves();
     for(auto move : all_moves){
         board.make_move(move);
