@@ -695,15 +695,23 @@ vector<Move> Board::generate_pawn_moves(int pos){
     return moves;
 }
 void Board::make_move(Move m){
-    bitboard_history.push_back(bitboard);
-    castling_rights_history.push_back(castling_rights);
-    en_passant_history.push_back(en_passant);
-    halfmove_clock_history.push_back(halfmove_clock);
-    zobrist_history.push_back(zobrist_hash);
     uint8_t from = m.from;
     uint8_t to = m.to;
     uint8_t flags = m.flags;
     uint8_t piece = is_occupied(from);
+
+    Undo undo;
+    undo.castling_rights = castling_rights;
+    undo.en_passant = en_passant;
+    undo.halfmove_clock = halfmove_clock;
+    undo.zobrist_hash = zobrist_hash;
+    undo.from = from;
+    undo.to = to;
+    undo.flags = flags;
+    undo.moved_piece = piece;
+    undo.captured_piece = 255;
+    undo.promotion_piece = 255;
+
     zobrist_hash^=zobrist_keys[piece*64 + from];
     zobrist_hash^=zobrist_keys[piece*64 + to];
     if(en_passant != square_nb){
@@ -760,6 +768,7 @@ void Board::make_move(Move m){
                 castling_rights &= ~4;
             }
         }
+        undo.captured_piece = captured_piece;
     }
     en_passant = square_nb;
     if(flags == 0){
@@ -823,10 +832,12 @@ void Board::make_move(Move m){
         if(active_color == white){
             bitboard[B_PAWN] &= ~(1ULL << (to - 8));
             zobrist_hash ^= zobrist_keys[B_PAWN*64 + (to-8)];
+            undo.captured_piece = B_PAWN;
         }
         else{
             bitboard[W_PAWN] &= ~(1ULL << (to + 8));
             zobrist_hash ^= zobrist_keys[W_PAWN*64 + (to+8)];
+            undo.captured_piece = W_PAWN;
         }
     }
     else if(flags >= 8 && flags <= 11){
@@ -852,6 +863,7 @@ void Board::make_move(Move m){
         bitboard[promotion_piece] |= (1ULL << to);
         zobrist_hash ^= zobrist_keys[piece*64 + to];
         zobrist_hash ^= zobrist_keys[promotion_piece*64 + to];
+        undo.promotion_piece = promotion_piece;
     }
     else if(flags >= 12 && flags <= 15){
         uint8_t promotion_piece =0;
@@ -879,6 +891,7 @@ void Board::make_move(Move m){
         zobrist_hash ^= zobrist_keys[piece*64 + to];
         zobrist_hash ^= zobrist_keys[promotion_piece*64 + to];
         zobrist_hash ^= zobrist_keys[captured_piece*64 + to];
+        undo.promotion_piece = promotion_piece;
     }
     active_color ^= 1;
     zobrist_hash ^= zobrist_keys[768 + castling_rights];
@@ -888,23 +901,75 @@ void Board::make_move(Move m){
     if(active_color == black){
         zobrist_hash ^= zobrist_keys[792];
     }
+    undo_history.push_back(undo);
 }
 
-void Board::unmake_move(Move m){
-    bitboard = bitboard_history.back();
-    bitboard_history.pop_back();
-    castling_rights = castling_rights_history.back();
-    castling_rights_history.pop_back();
-    en_passant = en_passant_history.back();
-    en_passant_history.pop_back();
-    halfmove_clock = halfmove_clock_history.back();
-    halfmove_clock_history.pop_back();
+void Board::unmake_move(){
+    Undo undo = undo_history.back();
+    undo_history.pop_back();
+    castling_rights = undo.castling_rights;
+    en_passant = undo.en_passant;
+    halfmove_clock = undo.halfmove_clock;
+    zobrist_hash = undo.zobrist_hash;
+    uint8_t moved_piece = undo.moved_piece;
+    uint8_t captured_piece = undo.captured_piece;
+    uint8_t promotion_piece = undo.promotion_piece;
+    uint8_t from = undo.from;
+    uint8_t to = undo.to;
+    uint8_t flags = undo.flags;
+    if(flags == 2){
+        if(moved_piece == W_KING){
+            bitboard[W_KING] &= ~(1ULL<<g1);
+            bitboard[W_KING] |= (1ULL<<e1);
+            bitboard[W_ROOK] &= ~(1ULL<<f1);
+            bitboard[W_ROOK] |= (1ULL<<h1);
+        }
+        else{
+            bitboard[B_KING] &= ~(1ULL<<g8);
+            bitboard[B_KING] |= (1ULL<<e8);
+            bitboard[B_ROOK] &= ~(1ULL<<f8);
+            bitboard[B_ROOK] |= (1ULL<<h8);
+        }
+    }
+    else if(flags == 3){
+        if(moved_piece == W_KING){
+            bitboard[W_KING] &= ~(1ULL<<c1);
+            bitboard[W_KING] |= (1ULL<<e1);
+            bitboard[W_ROOK] &= ~(1ULL<<d1);
+            bitboard[W_ROOK] |= (1ULL<<a1);
+        }
+        else{
+            bitboard[B_KING] &= ~(1ULL<<c8);
+            bitboard[B_KING] |= (1ULL<<e8);
+            bitboard[B_ROOK] &= ~(1ULL<<d8);
+            bitboard[B_ROOK] |= (1ULL<<a8);
+        }
+    }
+    else if(flags == 5){
+        bitboard[moved_piece] &= ~(1ULL<<to);
+        bitboard[moved_piece] |= (1ULL<<from);
+        if(moved_piece == W_PAWN){
+            bitboard[B_PAWN] |= (1ULL<<(to-8));
+        }
+        else{
+            bitboard[W_PAWN] |= (1ULL<<(to+8));
+        }
+    }
+    else{
+        if(captured_piece != 255){
+            bitboard[captured_piece] |= (1ULL<<to);
+        }
+        if(promotion_piece != 255){
+            bitboard[promotion_piece] &= ~(1ULL<<to);
+        }
+        bitboard[moved_piece] &= ~(1ULL<<to);
+        bitboard[moved_piece] |= (1ULL<<from);
+    }
+
     active_color ^= 1;
     if(active_color == black){
         fullmove_number--;
     }
-    zobrist_hash = zobrist_history.back();
-    zobrist_history.pop_back();
 }
 
 void Board::zobrist_init(){
@@ -945,8 +1010,8 @@ bool Board::is_fifty_move_draw(){
 }
 bool Board::is_three_fold_repetition(){
     uint8_t count = 0;
-    for(auto hash : zobrist_history) {
-        if(hash == zobrist_hash) count++;
+    for(auto undo : undo_history) {
+        if(undo.zobrist_hash == zobrist_hash) count++;
         if(count >= 3) return true;
     }
     return false;

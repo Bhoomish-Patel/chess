@@ -11,9 +11,16 @@
 #include "pieces.hpp"
 #include "moves.hpp"
 using namespace std;
+struct Undo{
+    uint8_t from,to,flags;
+    uint8_t moved_piece,captured_piece,promotion_piece;
+    uint8_t castling_rights,en_passant,halfmove_clock;
+    uint64_t zobrist_hash;
+};
 class Board{
     public:
         array<uint64_t,12>bitboard;
+        array<uint8_t,64>piece_at;
         uint8_t castling_rights;
         uint8_t en_passant;
         bool active_color;
@@ -25,11 +32,7 @@ class Board{
         vector<Move> generate_pseudo_legal_moves();
         int is_occupied(int pos);
         void zobrist_init();
-        vector<array<uint64_t,12>> bitboard_history;
-        vector<uint8_t> castling_rights_history;
-        vector<uint8_t> en_passant_history;
-        vector<uint8_t> halfmove_clock_history;
-        vector<uint64_t>zobrist_history;
+        vector<Undo> undo_history;
         uint64_t zobrist_hash;
         vector<uint64_t>zobrist_keys;
         vector<Move> generate_king_moves(uint8_t pos);
@@ -40,7 +43,7 @@ class Board{
         vector<Move> generate_pawn_moves(int pos);
         vector<Move> generate_legal_moves();
         void make_move(Move m);
-        void unmake_move(Move m);
+        void unmake_move();
         uint64_t generate_attack_squares(uint8_t pos,uint8_t&cnt_check,uint8_t &checking_piece_square);
         bool is_stalemate();
         bool is_checkmate();

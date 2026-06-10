@@ -163,7 +163,7 @@ uint64_t perft(Board &board,int depth,int root_depth){
         //     cout << pos_to_str(m.from)<< pos_to_str(m.to) << ": " << child << endl;
         // }
         nodes += child;
-        board.unmake_move(m);
+        board.unmake_move();
     }
     return nodes;
 }

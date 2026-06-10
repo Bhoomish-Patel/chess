@@ -11,7 +11,7 @@ Move search(Board& board,int depth){
         board.make_move(move);
         int score = -alpha_beta(board,depth - 1,INT32_MIN,INT32_MAX);
         // cout<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<" "<<score<<endl;
-        board.unmake_move(move);
+        board.unmake_move();
         if(score > mx){
             mx = score;
             best_move = move;
@@ -32,7 +32,7 @@ int negamax(Board& board,int depth){
     for(auto move : all_moves){
         board.make_move(move);
         int score = -negamax(board,depth - 1);
-        board.unmake_move(move);
+        board.unmake_move();
         mx = max(mx,score);
     }
     return mx;
@@ -50,7 +50,7 @@ int alpha_beta(Board& board,int depth,int alpha,int beta){
     for(auto i:legal_moves){
         board.make_move(i);
         int score = -alpha_beta(board,depth-1,-beta,-alpha);
-        board.unmake_move(i);
+        board.unmake_move();
         if(score > mx){
             mx = score;
             if(score > alpha){
