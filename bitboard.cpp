@@ -6,8 +6,17 @@ using namespace std;
 Board:: Board(): Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"){}
 Board:: Board(string fen){
     bitboard.fill(0);
+    piece_at.fill(square_nb);
     vector<string>partitions = split(fen);
     set_bitboard(partitions[0],bitboard);
+    for(uint8_t i=0;i<12;i++){
+        uint64_t bb = bitboard[i];
+        while(bb){
+            uint8_t j = __builtin_ctzll(bb);
+            bb &= bb - 1;
+            piece_at[j] = i;
+        }
+    }
     if(partitions[1]=="w"){
         active_color = white;
     }
@@ -40,27 +49,22 @@ Board:: Board(string fen){
     fullmove_number = stoi(partitions[5]);
     zobrist_init();
 }
-int Board:: is_occupied(int pos){
-    for(int i=0;i<12;i++){
-        if((bitboard[i]>>pos)&1){
-            return i;
-        }
-    }
-    return -1;
+int Board::is_occupied(int pos){
+    return (int)piece_at[pos];
 }
 uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &checking_piece_square){
     uint64_t attack_squares = 0;
     array<uint64_t,12>temp = bitboard;
-    uint8_t cur_king = active_color== white?0:6 + W_KING;
-    for(uint8_t i=0;i<64;i++){
-        if((bitboard[cur_king]>>i)&1){
-            bitboard[cur_king] = bitboard[cur_king] & (~(1ULL<<i));
-            break;
-        }
-    }
+    uint8_t cur_king = active_color== white ? W_KING : B_KING;
+    uint8_t king_sq = __builtin_ctzll(bitboard[cur_king]);
+    bitboard[cur_king] = 0;
+    piece_at[king_sq] = square_nb;
     uint8_t opponent_pawn = (active_color == white) ? B_PAWN : W_PAWN;
-    for(uint8_t i=0;i<64;i++){
-        if((bitboard[opponent_pawn]>>i)&1){
+    uint64_t pawn_bb = bitboard[opponent_pawn];
+    while(pawn_bb){
+        uint8_t i = __builtin_ctzll(pawn_bb);
+        pawn_bb &= pawn_bb - 1;
+        {
             uint8_t row = i/8;
             uint8_t col = i%8;
             if(active_color == white){
@@ -122,8 +126,11 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
         }
     }
     uint8_t opponent_knight = (active_color == white) ? B_KNIGHT : W_KNIGHT;
-     for(uint8_t i=0;i<64;i++){
-        if((bitboard[opponent_knight]>>i)&1){
+    uint64_t knight_bb = bitboard[opponent_knight];
+    while(knight_bb){
+        uint8_t i = __builtin_ctzll(knight_bb);
+        knight_bb &= knight_bb - 1;
+        {
             uint8_t row = i/8;
             uint8_t col = i%8;
             int8_t dr[8] = {-2,-1,1,2,2,1,-1,-2};
@@ -143,8 +150,11 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
         }
     }
     uint8_t opponent_bishop = (active_color == white) ? B_BISHOP : W_BISHOP;
-    for(uint8_t i=0;i<64;i++){
-        if((bitboard[opponent_bishop]>>i)&1){
+    uint64_t bishop_bb = bitboard[opponent_bishop];
+    while(bishop_bb){
+        uint8_t i = __builtin_ctzll(bishop_bb);
+        bishop_bb &= bishop_bb - 1;
+        {
             uint8_t row = i/8;
             uint8_t col = i%8;
             for(int8_t dr=-1;dr<=1;dr++){
@@ -159,7 +169,7 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
                             checking_piece_square = i;
                             cnt_check++;
                         }
-                        if(is_occupied(new_pos) != -1){
+                        if(is_occupied(new_pos) != square_nb){
                             break;
                         }
                         new_row += dr;
@@ -170,8 +180,11 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
         }
     }
     uint8_t opponent_rook = (active_color == white) ? B_ROOK : W_ROOK;
-    for(uint8_t i=0;i<64;i++){
-        if((bitboard[opponent_rook]>>i)&1){
+    uint64_t rook_bb = bitboard[opponent_rook];
+    while(rook_bb){
+        uint8_t i = __builtin_ctzll(rook_bb);
+        rook_bb &= rook_bb - 1;
+        {
             uint8_t row = i/8;
             uint8_t col = i%8;
             for(int8_t dr=-1;dr<=1;dr++){
@@ -186,7 +199,7 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
                             checking_piece_square = i;
                             cnt_check++;
                         }
-                        if(is_occupied(new_pos) != -1){
+                        if(is_occupied(new_pos) != square_nb){
                             break;
                         }
                         new_row += dr;
@@ -197,8 +210,11 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
         }
     }
     uint8_t opponent_queen = (active_color == white) ? B_QUEEN : W_QUEEN;
-    for(uint8_t i=0;i<64;i++){
-        if((bitboard[opponent_queen]>>i)&1){
+    uint64_t queen_bb = bitboard[opponent_queen];
+    while(queen_bb){
+        uint8_t i = __builtin_ctzll(queen_bb);
+        queen_bb &= queen_bb - 1;
+        {
             uint8_t row = i/8;
             uint8_t col = i%8;
             for(int8_t dr=-1;dr<=1;dr++){
@@ -213,7 +229,7 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
                             checking_piece_square = i;
                             cnt_check++;
                         }
-                        if(is_occupied(new_pos) != -1){
+                        if(is_occupied(new_pos) != square_nb){
                             break;
                         }
                         new_row += dr;
@@ -224,29 +240,28 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
         }
     }
     uint8_t opponent_king = (active_color == white) ? B_KING : W_KING;
-    for(uint8_t i=0;i<64;i++){
-        if((bitboard[opponent_king]>>i)&1){
-            uint8_t row = i/8;
-            uint8_t col = i%8;
-            for(int8_t dr=-1;dr<=1;dr++){
-                for(int8_t dc=-1;dc<=1;dc++){
-                    if(dr==0 && dc==0) continue;
-                    uint8_t new_row = row + dr;
-                    uint8_t new_col = col + dc;
-                    if(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
-                        uint8_t new_pos = new_row*8 + new_col;
-                        attack_squares |= (1ULL << new_pos);
-                        if(new_pos == pos){
-                            checking_piece_square = i;
-                            cnt_check++;
-                        }
+    if(bitboard[opponent_king]){
+        uint8_t i = __builtin_ctzll(bitboard[opponent_king]);
+        uint8_t row = i/8;
+        uint8_t col = i%8;
+        for(int8_t dr=-1;dr<=1;dr++){
+            for(int8_t dc=-1;dc<=1;dc++){
+                if(dr==0 && dc==0) continue;
+                uint8_t new_row = row + dr;
+                uint8_t new_col = col + dc;
+                if(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
+                    uint8_t new_pos = new_row*8 + new_col;
+                    attack_squares |= (1ULL << new_pos);
+                    if(new_pos == pos){
+                        checking_piece_square = i;
+                        cnt_check++;
                     }
                 }
             }
-            break;
         }
     }
     bitboard = temp;
+    piece_at[king_sq] = (uint8_t)cur_king;
     return attack_squares;
 }
 
@@ -284,7 +299,7 @@ vector<Move> Board:: generate_legal_moves(){
                             continue;
                         }
                         int piece_at_pos = is_occupied(c + 8*r_cur_king);
-                        if(piece_at_pos != -1){
+                        if(piece_at_pos != square_nb){
                             if(get_piece_type(piece_at_pos) == active_color){
                                 break;
                             }
@@ -302,7 +317,7 @@ vector<Move> Board:: generate_legal_moves(){
                             continue;
                         }
                         int piece_at_pos = is_occupied(c + 8*r_cur_king);
-                        if(piece_at_pos != -1){
+                        if(piece_at_pos != square_nb){
                             if(get_piece_type(piece_at_pos) == active_color){
                                 break;
                             }
@@ -417,32 +432,33 @@ vector<Move> Board:: generate_pseudo_legal_moves(){
         if(active_color != get_piece_type(i)){
             continue;
         }
-        for(uint8_t j=0;j<64;j++){
-            if((bitboard[i]>>j)&1){
-                if(i%6 == 0){
-                    vector<Move>king_moves = generate_king_moves(j);
-                    moves.insert(moves.end(),king_moves.begin(),king_moves.end());
-                }
-                else if(i%6 == 1){
-                    vector<Move>queen_moves = generate_queen_moves(j);
-                    moves.insert(moves.end(),queen_moves.begin(),queen_moves.end());
-                }
-                else if(i%6 == 2){
-                    vector<Move>rook_moves = generate_rook_moves(j);
-                    moves.insert(moves.end(),rook_moves.begin(),rook_moves.end());
-                }
-                else if(i%6 == 3){
-                    vector<Move>bishop_moves = generate_bishop_moves(j);
-                    moves.insert(moves.end(),bishop_moves.begin(),bishop_moves.end());
-                }
-                else if(i%6 == 4){
-                    vector<Move>knight_moves = generate_knight_moves(j);
-                    moves.insert(moves.end(),knight_moves.begin(),knight_moves.end());
-                }
-                else if(i%6 == 5){
-                    vector<Move>pawn_moves = generate_pawn_moves(j);
-                    moves.insert(moves.end(),pawn_moves.begin(),pawn_moves.end());
-                }
+        uint64_t bb = bitboard[i];
+        while(bb){
+            uint8_t j = __builtin_ctzll(bb);
+            bb &= bb - 1;
+            if(i%6 == 0){
+                vector<Move>king_moves = generate_king_moves(j);
+                moves.insert(moves.end(),king_moves.begin(),king_moves.end());
+            }
+            else if(i%6 == 1){
+                vector<Move>queen_moves = generate_queen_moves(j);
+                moves.insert(moves.end(),queen_moves.begin(),queen_moves.end());
+            }
+            else if(i%6 == 2){
+                vector<Move>rook_moves = generate_rook_moves(j);
+                moves.insert(moves.end(),rook_moves.begin(),rook_moves.end());
+            }
+            else if(i%6 == 3){
+                vector<Move>bishop_moves = generate_bishop_moves(j);
+                moves.insert(moves.end(),bishop_moves.begin(),bishop_moves.end());
+            }
+            else if(i%6 == 4){
+                vector<Move>knight_moves = generate_knight_moves(j);
+                moves.insert(moves.end(),knight_moves.begin(),knight_moves.end());
+            }
+            else if(i%6 == 5){
+                vector<Move>pawn_moves = generate_pawn_moves(j);
+                moves.insert(moves.end(),pawn_moves.begin(),pawn_moves.end());
             }
         }
     }
@@ -459,7 +475,7 @@ vector<Move> Board:: generate_king_moves(uint8_t pos){
             uint8_t new_col = col + dc;
             if(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
                 uint8_t new_pos = new_row*8 + new_col;
-                if(is_occupied(new_pos) == -1){
+                if(is_occupied(new_pos) == square_nb){
                     moves.push_back(Move(pos,new_pos,0));
                 }
                 else if(get_piece_type(is_occupied(new_pos)) != active_color){
@@ -470,18 +486,18 @@ vector<Move> Board:: generate_king_moves(uint8_t pos){
     }
 
     if(active_color == white){
-        if((castling_rights & 1) && is_occupied(f1) == -1 && is_occupied(g1) == -1){
+        if((castling_rights & 1) && is_occupied(f1) == square_nb && is_occupied(g1) == square_nb){
             moves.push_back(Move(e1,g1,2)); 
         }
-        if((castling_rights & 2) && is_occupied(d1) == -1 && is_occupied(c1) == -1 && is_occupied(b1) == -1){
+        if((castling_rights & 2) && is_occupied(d1) == square_nb && is_occupied(c1) == square_nb && is_occupied(b1) == square_nb){
             moves.push_back(Move(e1,c1,3)); 
         }
     }
     else{
-        if((castling_rights & 4) && is_occupied(f8) == -1 && is_occupied(g8) == -1){
+        if((castling_rights & 4) && is_occupied(f8) == square_nb && is_occupied(g8) == square_nb){
             moves.push_back(Move(e8,g8,2)); 
         }
-        if((castling_rights & 8) && is_occupied(d8) == -1 && is_occupied(c8) == -1 && is_occupied(b8) == -1){
+        if((castling_rights & 8) && is_occupied(d8) == square_nb && is_occupied(c8) == square_nb && is_occupied(b8) == square_nb){
             moves.push_back(Move(e8,c8,3)); 
         }
     }
@@ -500,7 +516,7 @@ vector<Move> Board:: generate_queen_moves(uint8_t pos){
             uint8_t new_col = col + dc;
             while(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
                 uint8_t new_pos = new_row*8 + new_col;
-                if(is_occupied(new_pos) == -1){
+                if(is_occupied(new_pos) == square_nb){
                     moves.push_back(Move(pos,new_pos,0));
                 }
                 else{
@@ -526,7 +542,7 @@ vector<Move> Board:: generate_rook_moves(uint8_t pos){
             uint8_t new_col = pos%8 + dc;
             while(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
                 uint8_t new_pos = new_row*8 + new_col;
-                if(is_occupied(new_pos) == -1){
+                if(is_occupied(new_pos) == square_nb){
                     moves.push_back(Move(pos,new_pos,0));
                 }
                 else{
@@ -551,7 +567,7 @@ vector<Move> Board:: generate_bishop_moves(uint8_t pos){
             uint8_t new_col = pos%8 + dc;
             while(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
                 uint8_t new_pos = new_row*8 + new_col;
-                if(is_occupied(new_pos) == -1){
+                if(is_occupied(new_pos) == square_nb){
                     moves.push_back(Move(pos,new_pos,0));
                 }
                 else{
@@ -578,7 +594,7 @@ vector<Move> Board:: generate_knight_moves(uint8_t pos){
         int8_t new_col = col + dc[i];
         if(new_row>=0 && new_row<8 && new_col>=0 && new_col<8){
             uint8_t new_pos = new_row*8 + new_col;
-            if(is_occupied(new_pos) == -1){
+            if(is_occupied(new_pos) == square_nb){
                 moves.push_back(Move(pos,new_pos,0));
             }
             else if(get_piece_type(is_occupied(new_pos)) != active_color){
@@ -594,7 +610,7 @@ vector<Move> Board::generate_pawn_moves(int pos){
     uint8_t col = pos % 8;
 
     if(active_color == white){
-        if(row < 7 && is_occupied(pos + 8) == -1){
+        if(row < 7 && is_occupied(pos + 8) == square_nb){
             if(row == 6){
                 moves.push_back(Move(pos,pos+8,8));
                 moves.push_back(Move(pos,pos+8,9));
@@ -605,12 +621,12 @@ vector<Move> Board::generate_pawn_moves(int pos){
             }
         }
 
-        if(row == 1 && is_occupied(pos+8) == -1 && is_occupied(pos+16) == -1){
+        if(row == 1 && is_occupied(pos+8) == square_nb && is_occupied(pos+16) == square_nb){
             moves.push_back(Move(pos,pos+16,1));
         }
         if(row < 7 && col > 0){
             uint8_t target = pos + 7;
-            if(is_occupied(target) != -1 && get_piece_type(is_occupied(target)) == black){
+            if(is_occupied(target) != square_nb && get_piece_type(is_occupied(target)) == black){
                 if(row == 6){
                     moves.push_back(Move(pos,target,12));
                     moves.push_back(Move(pos,target,13));
@@ -623,7 +639,7 @@ vector<Move> Board::generate_pawn_moves(int pos){
         }
         if(row < 7 && col < 7){
             uint8_t target = pos + 9;
-            if(is_occupied(target) != -1 && get_piece_type(is_occupied(target)) == black){
+            if(is_occupied(target) != square_nb && get_piece_type(is_occupied(target)) == black){
                 if(row == 6){
                     moves.push_back(Move(pos,target,12));
                     moves.push_back(Move(pos,target,13));
@@ -644,7 +660,7 @@ vector<Move> Board::generate_pawn_moves(int pos){
         }
     }
     else{
-        if(row > 0 && is_occupied(pos - 8) == -1){
+        if(row > 0 && is_occupied(pos - 8) == square_nb){
             if(row == 1){
                 moves.push_back(Move(pos,pos-8,8));
                 moves.push_back(Move(pos,pos-8,9));
@@ -654,12 +670,12 @@ vector<Move> Board::generate_pawn_moves(int pos){
                 moves.push_back(Move(pos,pos-8,0));
             }
         }
-        if(row == 6 && is_occupied(pos-8) == -1 && is_occupied(pos-16) == -1){
+        if(row == 6 && is_occupied(pos-8) == square_nb && is_occupied(pos-16) == square_nb){
             moves.push_back(Move(pos,pos-16,1));
         }
         if(row > 0 && col > 0){
             uint8_t target = pos - 9;
-            if(is_occupied(target) != -1 && get_piece_type(is_occupied(target)) == white){
+            if(is_occupied(target) != square_nb && get_piece_type(is_occupied(target)) == white){
                 if(row == 1){
                     moves.push_back(Move(pos,target,12));
                     moves.push_back(Move(pos,target,13));
@@ -672,7 +688,7 @@ vector<Move> Board::generate_pawn_moves(int pos){
         }
         if(row > 0 && col < 7){
             uint8_t target = pos - 7;
-            if(is_occupied(target) != -1 && get_piece_type(is_occupied(target)) == white){
+            if(is_occupied(target) != square_nb && get_piece_type(is_occupied(target)) == white){
                 if(row == 1){
                     moves.push_back(Move(pos,target,12));
                     moves.push_back(Move(pos,target,13));
@@ -774,10 +790,14 @@ void Board::make_move(Move m){
     if(flags == 0){
         bitboard[piece] &= ~(1ULL << from);
         bitboard[piece] |= (1ULL << to);
+        piece_at[from] = square_nb;
+        piece_at[to] = piece;
     }
     else if(flags == 1){
         bitboard[piece] &= ~(1ULL << from);
         bitboard[piece] |= (1ULL << to);
+        piece_at[from] = square_nb;
+        piece_at[to] = piece;
         if(piece == W_PAWN){
             en_passant = from + 8;
         }
@@ -788,15 +808,21 @@ void Board::make_move(Move m){
     else if(flags == 2){
         bitboard[piece] &= ~(1ULL << from);
         bitboard[piece] |= (1ULL << to);
+        piece_at[from] = square_nb;
+        piece_at[to] = piece;
         if(active_color == white){
             bitboard[W_ROOK] &= ~(1ULL << h1);
             bitboard[W_ROOK] |= (1ULL << f1);
+            piece_at[h1] =square_nb;
+            piece_at[f1] = W_ROOK;
             zobrist_hash ^= zobrist_keys[W_ROOK*64 + h1];
             zobrist_hash ^= zobrist_keys[W_ROOK*64 + f1];
         }
         else{
             bitboard[B_ROOK] &= ~(1ULL << h8);
             bitboard[B_ROOK] |= (1ULL << f8);
+            piece_at[h8] =square_nb;
+            piece_at[f8] = B_ROOK;
             zobrist_hash ^= zobrist_keys[B_ROOK*64 + h8];
             zobrist_hash ^= zobrist_keys[B_ROOK*64 + f8];
         }
@@ -805,15 +831,21 @@ void Board::make_move(Move m){
     else if(flags == 3){
         bitboard[piece] &= ~(1ULL << from);
         bitboard[piece] |= (1ULL << to);
+        piece_at[from] = square_nb;
+        piece_at[to] = piece;
         if(active_color == white){
             bitboard[W_ROOK] &= ~(1ULL << a1);
             bitboard[W_ROOK] |= (1ULL << d1);
+            piece_at[a1] =square_nb;
+            piece_at[d1] = W_ROOK;
             zobrist_hash ^= zobrist_keys[W_ROOK*64 + a1];
             zobrist_hash ^= zobrist_keys[W_ROOK*64 + d1];
         }
         else{
             bitboard[B_ROOK] &= ~(1ULL << a8);
             bitboard[B_ROOK] |= (1ULL << d8);
+            piece_at[a8] =square_nb;
+            piece_at[d8] = B_ROOK;
             zobrist_hash ^= zobrist_keys[B_ROOK*64 + a8];
             zobrist_hash ^= zobrist_keys[B_ROOK*64 + d8];
         }
@@ -824,18 +856,24 @@ void Board::make_move(Move m){
         bitboard[captured_piece] &= ~(1ULL << to);
         bitboard[piece] &= ~(1ULL << from);
         bitboard[piece] |= (1ULL << to);
+        piece_at[from] = square_nb;
+        piece_at[to] = piece;
         zobrist_hash ^= zobrist_keys[captured_piece*64 + to];
     }
     else if(flags == 5){
         bitboard[piece] &= ~(1ULL << from);
         bitboard[piece] |= (1ULL << to);
+        piece_at[from] = square_nb;
+        piece_at[to] = piece;
         if(active_color == white){
             bitboard[B_PAWN] &= ~(1ULL << (to - 8));
+            piece_at[to-8] =square_nb;
             zobrist_hash ^= zobrist_keys[B_PAWN*64 + (to-8)];
             undo.captured_piece = B_PAWN;
         }
         else{
             bitboard[W_PAWN] &= ~(1ULL << (to + 8));
+            piece_at[to+8] = square_nb;
             zobrist_hash ^= zobrist_keys[W_PAWN*64 + (to+8)];
             undo.captured_piece = W_PAWN;
         }
@@ -861,6 +899,8 @@ void Board::make_move(Move m){
         bitboard[piece] |= (1ULL << to);
         bitboard[piece] &= ~(1ULL << to);
         bitboard[promotion_piece] |= (1ULL << to);
+        piece_at[from] = square_nb;
+        piece_at[to] = promotion_piece;
         zobrist_hash ^= zobrist_keys[piece*64 + to];
         zobrist_hash ^= zobrist_keys[promotion_piece*64 + to];
         undo.promotion_piece = promotion_piece;
@@ -888,6 +928,8 @@ void Board::make_move(Move m){
         bitboard[piece] |= (1ULL << to);
         bitboard[piece] &= ~(1ULL << to);
         bitboard[promotion_piece] |= (1ULL << to);
+        piece_at[from] = square_nb;
+        piece_at[to] = promotion_piece;
         zobrist_hash ^= zobrist_keys[piece*64 + to];
         zobrist_hash ^= zobrist_keys[promotion_piece*64 + to];
         zobrist_hash ^= zobrist_keys[captured_piece*64 + to];
@@ -923,12 +965,22 @@ void Board::unmake_move(){
             bitboard[W_KING] |= (1ULL<<e1);
             bitboard[W_ROOK] &= ~(1ULL<<f1);
             bitboard[W_ROOK] |= (1ULL<<h1);
+
+            piece_at[g1] = square_nb;
+            piece_at[e1] = W_KING;
+            piece_at[f1] = square_nb;
+            piece_at[h1] = W_ROOK;
         }
         else{
             bitboard[B_KING] &= ~(1ULL<<g8);
             bitboard[B_KING] |= (1ULL<<e8);
             bitboard[B_ROOK] &= ~(1ULL<<f8);
             bitboard[B_ROOK] |= (1ULL<<h8);
+
+            piece_at[g8] = square_nb;
+            piece_at[e8] = B_KING;
+            piece_at[f8] = square_nb;
+            piece_at[h8] = B_ROOK;
         }
     }
     else if(flags == 3){
@@ -937,33 +989,50 @@ void Board::unmake_move(){
             bitboard[W_KING] |= (1ULL<<e1);
             bitboard[W_ROOK] &= ~(1ULL<<d1);
             bitboard[W_ROOK] |= (1ULL<<a1);
+
+            piece_at[c1] = square_nb;
+            piece_at[e1] = W_KING;
+            piece_at[d1] = square_nb;
+            piece_at[a1] = W_ROOK;
         }
         else{
             bitboard[B_KING] &= ~(1ULL<<c8);
             bitboard[B_KING] |= (1ULL<<e8);
             bitboard[B_ROOK] &= ~(1ULL<<d8);
             bitboard[B_ROOK] |= (1ULL<<a8);
+
+            piece_at[c8] = square_nb;
+            piece_at[e8] = B_KING;
+            piece_at[d8] = square_nb;
+            piece_at[a8] = B_ROOK;
         }
     }
     else if(flags == 5){
         bitboard[moved_piece] &= ~(1ULL<<to);
         bitboard[moved_piece] |= (1ULL<<from);
+        piece_at[to] = square_nb;
+        piece_at[from] = moved_piece;
         if(moved_piece == W_PAWN){
             bitboard[B_PAWN] |= (1ULL<<(to-8));
+            piece_at[to-8] = B_PAWN;
         }
         else{
             bitboard[W_PAWN] |= (1ULL<<(to+8));
+            piece_at[to+8] = W_PAWN;
         }
     }
     else{
+        bitboard[moved_piece] &= ~(1ULL<<to);
+        bitboard[moved_piece] |= (1ULL<<from);
+        piece_at[to] = square_nb;
+        piece_at[from] = moved_piece;
         if(captured_piece != 255){
             bitboard[captured_piece] |= (1ULL<<to);
+            piece_at[to] = captured_piece;
         }
         if(promotion_piece != 255){
             bitboard[promotion_piece] &= ~(1ULL<<to);
         }
-        bitboard[moved_piece] &= ~(1ULL<<to);
-        bitboard[moved_piece] |= (1ULL<<from);
     }
 
     active_color ^= 1;
@@ -980,10 +1049,11 @@ void Board::zobrist_init(){
     }
     zobrist_hash = 0;
     for(uint8_t i=0;i<12;i++){
-        for(uint8_t j=0;j<64;j++){
-            if((bitboard[i]>>j)&1){
-                zobrist_hash ^= zobrist_keys[i*64 + j];
-            }
+        uint64_t bb = bitboard[i];
+        while(bb){
+            uint8_t j = __builtin_ctzll(bb);
+            bb &= bb - 1;
+            zobrist_hash ^= zobrist_keys[i*64 + j];
         }
     }
     zobrist_hash ^= zobrist_keys[castling_rights+768];
@@ -1033,7 +1103,7 @@ map<uint8_t,uint64_t> Board::find_pinned_piece_moves(uint8_t king_pos){
             int attack_piece_pos = -1 ,pinned_piece_pos = -1;
             while(r_cur<8 && r_cur>=0 && c_cur>=0 && c_cur<8){
                 int cur_piece = is_occupied(r_cur*8 + c_cur);
-                if(cur_piece!=-1){
+                if(cur_piece != (int)square_nb){
                     if(pinned_piece_pos == -1 && get_piece_type(cur_piece) == get_piece_type(cur_king)){
                         pinned_piece_pos = r_cur*8 + c_cur;
                     }

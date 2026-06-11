@@ -103,10 +103,10 @@ uint8_t get_piece_at_pos(array<uint64_t,12>bitboard,uint8_t pos){
 }
 vector<int> find_active_pos(array<uint64_t,12>bitboard,uint8_t piece_type){
     vector<int>pos;
-    for(int i=0;i<64;i++){
-        if((bitboard[piece_type]>>i)&1){
-            pos.push_back(i);
-        }
+    uint64_t bb = bitboard[piece_type];
+    while(bb){
+        pos.push_back(__builtin_ctzll(bb));
+        bb &= bb - 1;
     }
     return pos;
 }

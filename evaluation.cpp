@@ -14,17 +14,10 @@ int evaluate(Board board){
     int material_score = 0;
     const int piece_type_scores[6] = {0,9,5,3,3,1};
     for(uint8_t i=0;i<12;i++){
-        for(uint8_t j=0;j<64;j++){
-            if((board.bitboard[i] >> j) & 1ULL){
-                int cur = piece_type_scores[i%6];
-                if(i < 6){
-                    material_score += cur;
-                }
-                else{
-                    material_score -= cur;
-                }
-            }
-        }
+        int cnt = __builtin_popcountll(board.bitboard[i]);
+        int cur = piece_type_scores[i%6] * cnt;
+        if(i < 6) material_score += cur;
+        else       material_score -= cur;
     }
     if(board.is_three_fold_repetition() && material_score <= 0){
         return 0;
