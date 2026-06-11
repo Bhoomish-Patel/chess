@@ -1041,6 +1041,38 @@ void Board::unmake_move(){
     }
 }
 
+string Board::to_fen(){
+    const char piece_chars[12] = {'K','Q','R','B','N','P','k','q','r','b','n','p'};
+    string fen = "";
+    for(int8_t row = 7; row >= 0; row--){
+        int empty = 0;
+        for(uint8_t col = 0; col < 8; col++){
+            uint8_t p = piece_at[row*8 + col];
+            if(p >= 12){
+                empty++;
+            } else {
+                if(empty > 0){ fen += ('0' + empty); empty = 0; }
+                fen += piece_chars[p];
+            }
+        }
+        if(empty > 0) fen += ('0' + empty);
+        if(row > 0) fen += '/';
+    }
+    fen += active_color == white ? " w " : " b ";
+    string cr = "";
+    if(castling_rights & 1) cr += 'K';
+    if(castling_rights & 2) cr += 'Q';
+    if(castling_rights & 4) cr += 'k';
+    if(castling_rights & 8) cr += 'q';
+    fen += cr.empty() ? "-" : cr;
+    fen += ' ';
+    fen += (en_passant == square_nb) ? "-" : pos_to_str(en_passant);
+    fen += ' ';
+    fen += to_string(halfmove_clock);
+    fen += ' ';
+    fen += to_string(fullmove_number);
+    return fen;
+}
 void Board::zobrist_init(){
     zobrist_keys.resize(793);
     std::mt19937_64 rng(0xDEADBEEF);

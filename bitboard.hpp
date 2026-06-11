@@ -45,6 +45,7 @@ class Board{
         void make_move(Move m);
         void unmake_move();
         uint64_t generate_attack_squares(uint8_t pos,uint8_t&cnt_check,uint8_t &checking_piece_square);
+        string to_fen();
         bool is_stalemate();
         bool is_checkmate();
         bool is_fifty_move_draw();
