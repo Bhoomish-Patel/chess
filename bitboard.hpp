@@ -7,6 +7,7 @@
 #include<string>
 #include<iostream>
 #include<random>
+#include<cstdint>
 #include "types.hpp"
 #include "pieces.hpp"
 #include "moves.hpp"
@@ -50,6 +51,6 @@ class Board{
         bool is_checkmate();
         bool is_fifty_move_draw();
         bool is_three_fold_repetition();
-        map<uint8_t,uint64_t> find_pinned_piece_moves(uint8_t king_pos);
+        array<uint64_t,64> find_pinned_piece_moves(uint8_t king_pos);
 };
 #endif

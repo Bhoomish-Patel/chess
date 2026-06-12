@@ -54,7 +54,6 @@ int Board::is_occupied(int pos){
 }
 uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &checking_piece_square){
     uint64_t attack_squares = 0;
-    array<uint64_t,12>temp = bitboard;
     uint8_t cur_king = active_color== white ? W_KING : B_KING;
     uint8_t king_sq = __builtin_ctzll(bitboard[cur_king]);
     bitboard[cur_king] = 0;
@@ -260,7 +259,7 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
             }
         }
     }
-    bitboard = temp;
+    bitboard[cur_king] |= (1ULL<<king_sq);
     piece_at[king_sq] = (uint8_t)cur_king;
     return attack_squares;
 }
@@ -273,7 +272,7 @@ vector<Move> Board:: generate_legal_moves(){
     uint8_t checking_piece_square = 0;
     uint64_t attack_squares = generate_attack_squares(cur_king_pos,cnt_check,checking_piece_square);
     vector<Move>final_moves;
-    map<uint8_t,uint64_t>pinned_piece_moves = find_pinned_piece_moves(cur_king_pos);
+    array<uint64_t,64>pinned_piece_moves = find_pinned_piece_moves(cur_king_pos);
     checks = cnt_check;
     if(cnt_check == 0){
         for(uint8_t i=0;i<all_moves.size();i++){
@@ -283,7 +282,7 @@ vector<Move> Board:: generate_legal_moves(){
                     continue;
                 }
             }
-            if(pinned_piece_moves.find(cur.from) != pinned_piece_moves.end()){
+            if(pinned_piece_moves[cur.from] != UINT64_MAX){
                 uint64_t slider_moves =  pinned_piece_moves[cur.from];
                 if((!((slider_moves>>cur.to)&1))){
                     continue;
@@ -382,7 +381,7 @@ vector<Move> Board:: generate_legal_moves(){
                     continue;
                 }
             }
-            else if(pinned_piece_moves.find(cur.from) != pinned_piece_moves.end()){
+            else if(pinned_piece_moves[cur.from] != UINT64_MAX){
                 uint64_t slider_moves =  pinned_piece_moves[cur.from];
                 if(!((slider_moves>>cur.to)&1)){
                     continue;
@@ -1118,13 +1117,14 @@ bool Board::is_three_fold_repetition(){
     }
     return false;
 }
-map<uint8_t,uint64_t> Board::find_pinned_piece_moves(uint8_t king_pos){
+array<uint64_t,64> Board::find_pinned_piece_moves(uint8_t king_pos){
     vector<int8_t> r_incs = {-1,0,1};
     vector<int8_t> c_incs = {-1,0,1};
     uint8_t r_king = king_pos/8;
     uint8_t c_king = king_pos%8;
     uint8_t cur_king = is_occupied(king_pos);
-    map<uint8_t,uint64_t>ans;
+    array<uint64_t,64>ans;
+    ans.fill(UINT64_MAX);
     for(uint8_t i=0;i<3;i++){
         for(uint8_t j=0;j<3;j++){
             int8_t r_inc = r_incs[i];
