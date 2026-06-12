@@ -6,11 +6,11 @@ using namespace std;
 Move search(Board& board,int depth){
     int mx = INT32_MIN;
     Move best_move(square_nb, square_nb, 0xFF);
-    vector<Move> all_moves = board.generate_legal_moves();
+    vector<Move> all_moves;
+    board.generate_legal_moves(all_moves);
     for(auto move : all_moves){
         board.make_move(move);
         int score = -alpha_beta(board,depth - 1,INT32_MIN,INT32_MAX);
-        // cout<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<" "<<score<<endl;
         board.unmake_move();
         if(score > mx){
             mx = score;
@@ -19,30 +19,12 @@ Move search(Board& board,int depth){
     }
     return best_move;
 }
-
-int negamax(Board& board,int depth){
-    if(depth == 0){
-        return evaluate(board);
-    }
-    vector<Move> all_moves = board.generate_legal_moves();
-    if(all_moves.size() == 0){
-        return evaluate(board);
-    }
-    int mx = INT32_MIN;
-    for(auto move : all_moves){
-        board.make_move(move);
-        int score = -negamax(board,depth - 1);
-        board.unmake_move();
-        mx = max(mx,score);
-    }
-    return mx;
-}
-// 
 int alpha_beta(Board& board,int depth,int alpha,int beta){
     if(depth == 0){
         return evaluate(board);
     }
-    vector<Move>legal_moves = board.generate_legal_moves();
+    vector<Move>legal_moves;
+    board.generate_legal_moves(legal_moves);
     if(legal_moves.size() == 0){
         return evaluate(board);
     }

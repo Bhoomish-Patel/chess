@@ -319,8 +319,9 @@ class MoveScoreListReader{
         }
         Move get_move(Board board,std::uint8_t from) {
             std::uint8_t piece = get_piece_at_pos(board.bitboard, from);
+            std::vector<Move> generated_moves;
             if (piece % 6 == 0) {
-                std::vector<Move> generated_moves = board.generate_king_moves(from);
+                board.generate_king_moves(from,generated_moves);
                 while(generated_moves.back().flags == 2 || generated_moves.back().flags == 3){
                     generated_moves.pop_back();
                 }
@@ -345,7 +346,7 @@ class MoveScoreListReader{
                 return generated_moves[to_idx];
             }
             else if (piece % 6 == 1) {
-                std::vector<Move> generated_moves = board.generate_queen_moves(from);
+                board.generate_queen_moves(from,generated_moves);
                 std::sort(generated_moves.begin(), generated_moves.end(), [](const Move& a, const Move& b) {
                     if (a.to != b.to) return a.to < b.to;
                     return a.flags < b.flags;
@@ -355,7 +356,7 @@ class MoveScoreListReader{
                 return generated_moves[to_idx];
             }
             else if (piece % 6 == 2) {
-                std::vector<Move> generated_moves = board.generate_rook_moves(from);
+                board.generate_rook_moves(from,generated_moves);
                 std::sort(generated_moves.begin(), generated_moves.end(), [](const Move& a, const Move& b) {
                     if (a.to != b.to) return a.to < b.to;
                     return a.flags < b.flags;
@@ -365,7 +366,7 @@ class MoveScoreListReader{
                 return generated_moves[to_idx];
             }
             else if (piece % 6 == 3) {
-                std::vector<Move> generated_moves = board.generate_bishop_moves(from);
+                board.generate_bishop_moves(from,generated_moves);
                 std::sort(generated_moves.begin(), generated_moves.end(), [](const Move& a, const Move& b) {
                     if (a.to != b.to) return a.to < b.to;
                     return a.flags < b.flags;
@@ -375,7 +376,7 @@ class MoveScoreListReader{
                 return generated_moves[to_idx];
             }
             else if (piece % 6 == 4) {
-                std::vector<Move> generated_moves = board.generate_knight_moves(from);
+                board.generate_knight_moves(from,generated_moves);
                 std::sort(generated_moves.begin(), generated_moves.end(), [](const Move& a, const Move& b) {
                     if (a.to != b.to) return a.to < b.to;
                     return a.flags < b.flags;
@@ -385,7 +386,7 @@ class MoveScoreListReader{
                 return generated_moves[to_idx];
             }
             else if (piece % 6 == 5) {
-                std::vector<Move> generated_moves = board.generate_pawn_moves(from);
+                board.generate_pawn_moves(from,generated_moves);
                 std::sort(generated_moves.begin(), generated_moves.end(), [](const Move& a, const Move& b) {
                     if (a.to != b.to) return a.to < b.to;
                     return a.flags < b.flags;

@@ -48,6 +48,7 @@ Board:: Board(string fen){
     halfmove_clock = stoi(partitions[4]);
     fullmove_number = stoi(partitions[5]);
     zobrist_init();
+    undo_history.reserve(512);
 }
 int Board::is_occupied(int pos){
     return (int)piece_at[pos];
@@ -264,14 +265,14 @@ uint64_t Board::generate_attack_squares(uint8_t pos,uint8_t &cnt_check,uint8_t &
     return attack_squares;
 }
 
-vector<Move> Board:: generate_legal_moves(){
-    vector<Move> all_moves = generate_pseudo_legal_moves();
+int Board:: generate_legal_moves(vector<Move>& final_moves){
+    vector<Move> all_moves;
+    generate_pseudo_legal_moves(all_moves);
     uint8_t cur_king = active_color== white?0:6 + W_KING;
-    uint8_t cur_king_pos = find_active_pos(bitboard,cur_king)[0];
+    uint8_t cur_king_pos = __builtin_ctzll(bitboard[cur_king]);
     uint8_t cnt_check = 0;
     uint8_t checking_piece_square = 0;
     uint64_t attack_squares = generate_attack_squares(cur_king_pos,cnt_check,checking_piece_square);
-    vector<Move>final_moves;
     array<uint64_t,64>pinned_piece_moves = find_pinned_piece_moves(cur_king_pos);
     checks = cnt_check;
     if(cnt_check == 0){
@@ -423,10 +424,9 @@ vector<Move> Board:: generate_legal_moves(){
             final_moves.push_back(cur);
         }
     }
-    return final_moves;
+    return final_moves.size();
 }
-vector<Move> Board:: generate_pseudo_legal_moves(){
-    vector<Move>moves;
+int Board:: generate_pseudo_legal_moves(vector<Move>& moves){
     for(uint8_t i=0;i<12;i++){
         if(active_color != get_piece_type(i)){
             continue;
@@ -436,35 +436,40 @@ vector<Move> Board:: generate_pseudo_legal_moves(){
             uint8_t j = __builtin_ctzll(bb);
             bb &= bb - 1;
             if(i%6 == 0){
-                vector<Move>king_moves = generate_king_moves(j);
+                vector<Move>king_moves;
+                generate_king_moves(j,king_moves);
                 moves.insert(moves.end(),king_moves.begin(),king_moves.end());
             }
             else if(i%6 == 1){
-                vector<Move>queen_moves = generate_queen_moves(j);
+                vector<Move>queen_moves;
+                generate_queen_moves(j,queen_moves);
                 moves.insert(moves.end(),queen_moves.begin(),queen_moves.end());
             }
             else if(i%6 == 2){
-                vector<Move>rook_moves = generate_rook_moves(j);
+                vector<Move>rook_moves;
+                generate_rook_moves(j,rook_moves);
                 moves.insert(moves.end(),rook_moves.begin(),rook_moves.end());
             }
             else if(i%6 == 3){
-                vector<Move>bishop_moves = generate_bishop_moves(j);
+                vector<Move>bishop_moves;
+                generate_bishop_moves(j,bishop_moves);
                 moves.insert(moves.end(),bishop_moves.begin(),bishop_moves.end());
             }
             else if(i%6 == 4){
-                vector<Move>knight_moves = generate_knight_moves(j);
+                vector<Move>knight_moves;
+                generate_knight_moves(j,knight_moves);
                 moves.insert(moves.end(),knight_moves.begin(),knight_moves.end());
             }
             else if(i%6 == 5){
-                vector<Move>pawn_moves = generate_pawn_moves(j);
+                vector<Move>pawn_moves;
+                generate_pawn_moves(j,pawn_moves);
                 moves.insert(moves.end(),pawn_moves.begin(),pawn_moves.end());
             }
         }
     }
-    return moves;
+    return moves.size();
 }
-vector<Move> Board:: generate_king_moves(uint8_t pos){
-    vector<Move>moves;
+int Board:: generate_king_moves(uint8_t pos,vector<Move>& moves){
     uint8_t row = pos/8;
     uint8_t col = pos%8;
     for(int8_t dr=-1;dr<=1;dr++){
@@ -500,12 +505,10 @@ vector<Move> Board:: generate_king_moves(uint8_t pos){
             moves.push_back(Move(e8,c8,3)); 
         }
     }
-    return moves;
+    return moves.size();
 }
 
-vector<Move> Board:: generate_queen_moves(uint8_t pos){
-    vector<Move>moves;
-
+int Board:: generate_queen_moves(uint8_t pos,vector<Move>& moves){
     uint8_t row = pos/8;
     uint8_t col = pos%8;
     for(int8_t dr=-1;dr<=1;dr++){
@@ -529,11 +532,10 @@ vector<Move> Board:: generate_queen_moves(uint8_t pos){
             }
         }
     }
-    return moves;
+    return moves.size();
 }
 
-vector<Move> Board:: generate_rook_moves(uint8_t pos){
-    vector<Move>moves;
+int Board:: generate_rook_moves(uint8_t pos,vector<Move>& moves){
     for(int8_t dc = -1;dc<=1;dc++){
         for(int8_t dr = -1;dr<=1;dr++){
             if((dc==0 && dr==0) || (dc!=0 && dr!=0)) continue;
@@ -555,10 +557,9 @@ vector<Move> Board:: generate_rook_moves(uint8_t pos){
             }
         }
     }
-    return moves;
+    return moves.size();
 }
-vector<Move> Board:: generate_bishop_moves(uint8_t pos){
-    vector<Move>moves;
+int Board:: generate_bishop_moves(uint8_t pos,vector<Move>& moves){
     for(int8_t dc = -1;dc<=1;dc++){
         for(int8_t dr = -1;dr<=1;dr++){
             if(dr==0 || dc==0) continue;
@@ -580,10 +581,9 @@ vector<Move> Board:: generate_bishop_moves(uint8_t pos){
             }
         }
     }
-    return moves;
+    return moves.size();
 }
-vector<Move> Board:: generate_knight_moves(uint8_t pos){
-    vector<Move>moves;
+int Board:: generate_knight_moves(uint8_t pos,vector<Move>& moves){
     uint8_t row = pos/8;
     uint8_t col = pos%8;
     int8_t dr[8] = {-2,-1,1,2,2,1,-1,-2};
@@ -601,10 +601,9 @@ vector<Move> Board:: generate_knight_moves(uint8_t pos){
             }
         }
     }
-    return moves;
+    return moves.size();
 }
-vector<Move> Board::generate_pawn_moves(int pos){
-    vector<Move> moves;
+int Board::generate_pawn_moves(int pos,vector<Move>& moves){
     uint8_t row = pos / 8;
     uint8_t col = pos % 8;
 
@@ -707,7 +706,7 @@ vector<Move> Board::generate_pawn_moves(int pos){
             }
         }
     }
-    return moves;
+    return moves.size();
 }
 void Board::make_move(Move m){
     uint8_t from = m.from;
@@ -1073,7 +1072,6 @@ string Board::to_fen(){
     return fen;
 }
 void Board::zobrist_init(){
-    zobrist_keys.resize(793);
     std::mt19937_64 rng(0xDEADBEEF);
     for(int i = 0; i < 793; i++) {
         zobrist_keys[i] = rng();
@@ -1096,22 +1094,24 @@ void Board::zobrist_init(){
     }
 }
 bool Board::is_stalemate(){
+    vector<Move>moves;
     if(checks == 0){
-        if(generate_legal_moves().size() == 0){
+        if(generate_legal_moves(moves) == 0){
             return 1;
         }
     }
     return 0;
 }
 bool Board::is_checkmate(){
-    return (generate_legal_moves().size() == 0) && checks;
+    vector<Move>moves;
+    return (generate_legal_moves(moves) == 0) && checks;
 }
 bool Board::is_fifty_move_draw(){
     return halfmove_clock >= 100;
 }
 bool Board::is_three_fold_repetition(){
     uint8_t count = 0;
-    for(auto undo : undo_history) {
+    for(const auto& undo : undo_history) {
         if(undo.zobrist_hash == zobrist_hash) count++;
         if(count >= 3) return true;
     }

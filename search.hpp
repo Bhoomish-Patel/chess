@@ -4,6 +4,5 @@
 #include "utils.hpp"
 #include "moves.hpp"
 Move search(Board &board,int depth);
-int negamax(Board& board,int depth);
 int alpha_beta(Board& board,int depth,int alpha,int beta);
 #endif

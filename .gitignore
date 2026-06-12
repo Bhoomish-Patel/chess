@@ -21,6 +21,7 @@ obj/
 *.swo
 *~
 .DS_Store
+dataset/
 
 # Test binaries
 tests/test_runner.exe
