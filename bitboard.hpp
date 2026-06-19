@@ -7,6 +7,7 @@
 #include<string>
 #include<iostream>
 #include<random>
+#include<fstream>
 #include<cstdint>
 #include "types.hpp"
 #include "pieces.hpp"
@@ -52,5 +53,14 @@ class Board{
         bool is_fifty_move_draw();
         bool is_three_fold_repetition();
         array<uint64_t,64> find_pinned_piece_moves(uint8_t king_pos);
+        uint64_t our_pieces;
+        uint64_t their_pieces;
 };
+extern void init_attack_tables();
+extern array<uint64_t,64>knight_tables;
+extern array<uint64_t,64>king_tables;
+extern array<uint64_t,64>rook_magic_numbers;
+extern array<uint64_t,64>bishop_magic_numbers;
+extern array<array<uint64_t,4096>,64> rook_tables;
+extern array<array<uint64_t,512>,64> bishop_tables;
 #endif

@@ -151,7 +151,10 @@ uint64_t perft(Board &board,int depth,int root_depth){
     if(depth == 0){
         return 1;
     }
-    vector<Move> moves;
+    static vector<vector<Move>> pool(64);
+    vector<Move>& moves = pool[depth];
+    moves.clear();
+    moves.reserve(64);
     board.generate_legal_moves(moves);
     if(depth == 1){
         return (int)moves.size();

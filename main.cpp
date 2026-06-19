@@ -8,6 +8,7 @@ int main(){
     Board board;
     int depth;
     cin>>depth;
+    init_attack_tables();
     auto t_start = chrono::high_resolution_clock::now();
     int node = perft(board,depth,depth);
     // board.make_move(Move(str_to_pos("b5"),str_to_pos("b7"),0));
