@@ -5,4 +5,5 @@
 #include "moves.hpp"
 Move search(Board &board,int depth);
 int alpha_beta(Board& board,int depth,int alpha,int beta);
+int quiscence(Board& board,int alpha,int beta);
 #endif
