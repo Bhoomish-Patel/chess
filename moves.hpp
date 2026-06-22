@@ -8,5 +8,6 @@ class Move{
         uint8_t to;
         uint8_t flags;
         Move(uint8_t from, uint8_t to, uint8_t flags);
+        Move();
 };
 #endif

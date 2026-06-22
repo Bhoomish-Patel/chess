@@ -1,19 +1,16 @@
 #include "bitboard.hpp"
 #include "utils.hpp"
 #include "search.hpp"
+#include "types.hpp"
 #include<chrono>
 #include<iostream>
 using namespace std;
 int main(){
-    Board board;
+    Board board("c");
     int depth;
     cin>>depth;
     init_attack_tables();
-    auto t_start = chrono::high_resolution_clock::now();
-    int node = perft(board,depth,depth);
-    // board.make_move(Move(str_to_pos("b5"),str_to_pos("b7"),0));
-    auto t_end = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::milliseconds>(t_end - t_start);
-    cout<<"Nodes processed:"<< node<< " Time taken: " << duration.count() << " ms" << " (" << ((double)node * 1000 / (double)duration.count()) << " nodes/s)" << endl;
+    Move move = search(board,depth);
+    cout<<pos_to_str(move.from)<<" "<<pos_to_str(move.to)<<" "<<(int)move.flags<<endl;
     return 0;
 }   
