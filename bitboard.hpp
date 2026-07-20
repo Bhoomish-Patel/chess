@@ -56,7 +56,7 @@ class Board{
         uint64_t our_pieces;
         uint64_t their_pieces;
 };
-extern void init_attack_tables();
+extern void init_attack_tables(const string& executable_path = "");
 extern array<uint64_t,64>knight_tables;
 extern array<uint64_t,64>king_tables;
 extern array<uint64_t,64>rook_magic_numbers;

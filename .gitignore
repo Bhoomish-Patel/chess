@@ -8,11 +8,28 @@
 *.so
 *.dylib
 
+# Project executables without file extensions
+/best_move
+/chess_engine
+/data_parser
+/data_parser_*
+/node_counter
+/node_counter_*
+/generate_magic_number
+/nnue/binpack_to_plain
+/nnue/binpack_to_plain_debug
+
 # Build directories
 build/
 dist/
 bin/
 obj/
+
+# Datasets and training data
+dataset/
+*.binpack
+*.plain
+*.csv
 
 # IDE and editor files
 .vscode/
@@ -21,7 +38,6 @@ obj/
 *.swo
 *~
 .DS_Store
-dataset/
 
 # Test binaries
 tests/test_runner.exe
@@ -32,14 +48,22 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.venv/
+venv/
+env/
 
 # Debug files
 *.dSYM/
 *.su
 *.gch
 *.pch
+*.profraw
+*.profdata
+coverage/
 
 # Backup files
 *.bak
 *.backup
-
+*.log
+*.tmp
+*.temp

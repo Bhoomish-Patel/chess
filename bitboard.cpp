@@ -1,6 +1,8 @@
 #include "bitboard.hpp"
 #include "utils.hpp"
 #include "moves.hpp"
+#include <filesystem>
+#include <stdexcept>
 using namespace std;
 
 array<uint64_t,64> rook_masks = {
@@ -1194,7 +1196,7 @@ array<uint64_t,64>rook_magic_numbers;
 array<uint64_t,64>bishop_magic_numbers;
 array<array<uint64_t,4096>,64> rook_tables;
 array<array<uint64_t,512>,64> bishop_tables;
-void init_attack_tables(){
+void init_attack_tables(const string& executable_path){
     for(uint8_t pos=0;pos<64;pos++){
         uint64_t attacks = 0;
         uint8_t row = pos/8;
@@ -1230,28 +1232,55 @@ void init_attack_tables(){
         king_tables[pos] = attacks;
     }
 
-    ifstream rook_magic_file("rook_magics.txt");
-    ifstream bishop_magic_file("bishop_magics.txt");
-    ifstream rook_table_file("rook_table.txt");
-    ifstream bishop_table_file("bishop_table.txt");
+    namespace fs = std::filesystem;
+    vector<fs::path> candidates;
+    if (!executable_path.empty()) {
+        fs::path executable = fs::absolute(executable_path).lexically_normal();
+        candidates.push_back(executable.parent_path());
+        candidates.push_back(executable.parent_path().parent_path());
+    }
+    candidates.push_back(fs::current_path());
+
+    fs::path resource_dir;
+    for (const fs::path& candidate : candidates) {
+        if (fs::exists(candidate / "rook_magics.txt") &&
+            fs::exists(candidate / "bishop_magics.txt") &&
+            fs::exists(candidate / "rook_table.txt") &&
+            fs::exists(candidate / "bishop_table.txt")) {
+            resource_dir = candidate;
+            break;
+        }
+    }
+    if (resource_dir.empty()) {
+        throw runtime_error("attack-table files were not found beside the executable");
+    }
+
+    ifstream rook_magic_file(resource_dir / "rook_magics.txt");
+    ifstream bishop_magic_file(resource_dir / "bishop_magics.txt");
+    ifstream rook_table_file(resource_dir / "rook_table.txt");
+    ifstream bishop_table_file(resource_dir / "bishop_table.txt");
 
     for(int i=0;i<64;i++){
-        rook_magic_file >> rook_magic_numbers[i];
+        if (!(rook_magic_file >> rook_magic_numbers[i]))
+            throw runtime_error("rook_magics.txt is incomplete or invalid");
     }
 
     for(int i=0;i<64;i++){
-        bishop_magic_file >> bishop_magic_numbers[i];
+        if (!(bishop_magic_file >> bishop_magic_numbers[i]))
+            throw runtime_error("bishop_magics.txt is incomplete or invalid");
     }
 
     for(int i=0;i<64;i++){
         for(int j=0;j<4096;j++){
-            rook_table_file >> rook_tables[i][j];
+            if (!(rook_table_file >> rook_tables[i][j]))
+                throw runtime_error("rook_table.txt is incomplete or invalid");
         }
     }
 
     for(int i=0;i<64;i++){
         for(int j=0;j<512;j++){
-            bishop_table_file >> bishop_tables[i][j];
+            if (!(bishop_table_file >> bishop_tables[i][j]))
+                throw runtime_error("bishop_table.txt is incomplete or invalid");
         }
     }
 }
